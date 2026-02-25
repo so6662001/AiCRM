@@ -1,0 +1,23 @@
+:root {
+  --brand: #4F6EF6;
+  --brand-light: #E8EDFF;
+  --success: #34C759;
+  --warning: #FF9500;
+  --danger: #FF3B30;
+  --text-primary: #1a1a2e;
+  --text-secondary: #636e7b;
+  --text-hint: #a0a8b4;
+  --bg-page: #f5f6fa;
+  --bg-card: #ffffff;
+  --border: #eef0f5;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; color: var(--text-primary); background: var(--bg-page); }
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.page-header h2 { font-size: 20px; font-weight: 600; }
+.card { background: var(--bg-card); border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.stat-row { display: flex; gap: 16px; margin-bottom: 20px; }
+.stat-card { flex: 1; background: var(--bg-card); border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.stat-card .value { font-size: 28px; font-weight: 700; color: var(--brand); }
+.stat-card .label { font-size: 13px; color: var(--text-hint); margin-top: 4px; }
+.filter-bar { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; }
