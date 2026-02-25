@@ -678,6 +678,79 @@ CREATE TABLE IF NOT EXISTS `customer_approval` (
   KEY `idx_tenant_status` (`tenant_id`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='客户审核表';
 
+-- 跟进附件表
+CREATE TABLE IF NOT EXISTS `follow_up_attachment` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `follow_up_id`      BIGINT       NOT NULL COMMENT '跟进记录ID',
+  `file_name`         VARCHAR(256) NOT NULL COMMENT '文件名',
+  `file_type`         VARCHAR(32)  NOT NULL COMMENT 'image/audio/video/document',
+  `file_size`         BIGINT       DEFAULT NULL COMMENT '文件大小(字节)',
+  `file_url`          VARCHAR(1024) NOT NULL COMMENT '文件URL',
+  `sort_order`        INT          NOT NULL DEFAULT 0 COMMENT '排序',
+  `created_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_tenant_follow_up` (`tenant_id`, `follow_up_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='跟进附件表';
+
+-- ERP同步日志表
+CREATE TABLE IF NOT EXISTS `erp_sync_log` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `erp_config_id`     BIGINT       DEFAULT NULL,
+  `sync_type`         TINYINT      NOT NULL COMMENT '1:ERP→CRM 2:CRM→ERP',
+  `sync_mode`         TINYINT      NOT NULL COMMENT '1全量/2增量/3单条',
+  `biz_type`          VARCHAR(32)  NOT NULL COMMENT 'customer/product/order',
+  `total_count`       INT          NOT NULL DEFAULT 0,
+  `success_count`     INT          NOT NULL DEFAULT 0,
+  `fail_count`        INT          NOT NULL DEFAULT 0,
+  `skip_count`        INT          NOT NULL DEFAULT 0,
+  `status`            TINYINT      NOT NULL COMMENT '1进行中/2成功/3部分失败/4失败',
+  `error_message`     TEXT         DEFAULT NULL,
+  `start_time`        DATETIME     DEFAULT NULL,
+  `end_time`          DATETIME     DEFAULT NULL,
+  `operated_by`       BIGINT       DEFAULT NULL,
+  `created_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_tenant_created` (`tenant_id`, `created_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP同步日志表';
+
+-- ERP同步明细表
+CREATE TABLE IF NOT EXISTS `erp_sync_detail` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `sync_log_id`       BIGINT       NOT NULL,
+  `crm_biz_id`        BIGINT       DEFAULT NULL,
+  `erp_biz_id`        VARCHAR(64)  DEFAULT NULL,
+  `sync_action`       TINYINT      NOT NULL COMMENT '1新增/2更新/3跳过',
+  `status`            TINYINT      NOT NULL COMMENT '1成功/2失败/3跳过',
+  `request_data`      TEXT         DEFAULT NULL,
+  `response_data`     TEXT         DEFAULT NULL,
+  `error_message`     TEXT         DEFAULT NULL,
+  `created_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_sync_log` (`sync_log_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP同步明细表';
+
+-- 活动扫码日志表
+CREATE TABLE IF NOT EXISTS `activity_scan_log` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `activity_id`       BIGINT       NOT NULL,
+  `scan_fingerprint`  VARCHAR(64)  DEFAULT NULL COMMENT 'ip+ua hash',
+  `scan_ip`           VARCHAR(64)  DEFAULT NULL,
+  `scan_ua`           VARCHAR(512) DEFAULT NULL,
+  `scan_time`         DATETIME     DEFAULT NULL,
+  `referer`           VARCHAR(512) DEFAULT NULL,
+  `did_register`      TINYINT      NOT NULL DEFAULT 0 COMMENT '0/1',
+  `did_add_friend`    TINYINT      NOT NULL DEFAULT 0 COMMENT '0/1',
+  `participant_id`     BIGINT       DEFAULT NULL,
+  `created_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_tenant_activity` (`tenant_id`, `activity_id`),
+  KEY `idx_activity_fingerprint` (`activity_id`, `scan_fingerprint`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='活动扫码日志表';
+
 -- 线索分配日志表
 CREATE TABLE IF NOT EXISTS `lead_assign_log` (
   `id`                BIGINT       NOT NULL,

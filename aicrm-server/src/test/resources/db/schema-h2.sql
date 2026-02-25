@@ -605,6 +605,70 @@ CREATE TABLE IF NOT EXISTS `customer_approval` (
   PRIMARY KEY (`id`)
 );
 
+CREATE TABLE IF NOT EXISTS `follow_up_attachment` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `follow_up_id`      BIGINT       NOT NULL,
+  `file_name`         VARCHAR(256) NOT NULL,
+  `file_type`         VARCHAR(32)  NOT NULL,
+  `file_size`         BIGINT       DEFAULT NULL,
+  `file_url`          VARCHAR(1024) NOT NULL,
+  `sort_order`        INT          NOT NULL DEFAULT 0,
+  `created_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `erp_sync_log` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `erp_config_id`     BIGINT       DEFAULT NULL,
+  `sync_type`         TINYINT      NOT NULL,
+  `sync_mode`         TINYINT      NOT NULL,
+  `biz_type`          VARCHAR(32)  NOT NULL,
+  `total_count`       INT          NOT NULL DEFAULT 0,
+  `success_count`     INT          NOT NULL DEFAULT 0,
+  `fail_count`        INT          NOT NULL DEFAULT 0,
+  `skip_count`        INT          NOT NULL DEFAULT 0,
+  `status`            TINYINT      NOT NULL,
+  `error_message`     CLOB         DEFAULT NULL,
+  `start_time`        TIMESTAMP    DEFAULT NULL,
+  `end_time`          TIMESTAMP    DEFAULT NULL,
+  `operated_by`       BIGINT       DEFAULT NULL,
+  `created_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `erp_sync_detail` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `sync_log_id`       BIGINT       NOT NULL,
+  `crm_biz_id`        BIGINT       DEFAULT NULL,
+  `erp_biz_id`        VARCHAR(64)  DEFAULT NULL,
+  `sync_action`       TINYINT      NOT NULL,
+  `status`            TINYINT      NOT NULL,
+  `request_data`      CLOB         DEFAULT NULL,
+  `response_data`     CLOB         DEFAULT NULL,
+  `error_message`     CLOB         DEFAULT NULL,
+  `created_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `activity_scan_log` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `activity_id`       BIGINT       NOT NULL,
+  `scan_fingerprint`  VARCHAR(64)  DEFAULT NULL,
+  `scan_ip`           VARCHAR(64)  DEFAULT NULL,
+  `scan_ua`           VARCHAR(512) DEFAULT NULL,
+  `scan_time`         TIMESTAMP    DEFAULT NULL,
+  `referer`           VARCHAR(512) DEFAULT NULL,
+  `did_register`      TINYINT      NOT NULL DEFAULT 0,
+  `did_add_friend`    TINYINT      NOT NULL DEFAULT 0,
+  `participant_id`    BIGINT       DEFAULT NULL,
+  `created_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+);
+
 CREATE TABLE IF NOT EXISTS `lead_assign_log` (
   `id`                BIGINT       NOT NULL,
   `tenant_id`         BIGINT       NOT NULL,
