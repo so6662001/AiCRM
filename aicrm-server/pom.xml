@@ -22,6 +22,18 @@
             <groupId>com.aicrm</groupId>
             <artifactId>aicrm-module-crm</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.aicrm</groupId>
+            <artifactId>aicrm-module-fieldwork</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.aicrm</groupId>
+            <artifactId>aicrm-module-activity</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.aicrm</groupId>
+            <artifactId>aicrm-module-social</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>com.mysql</groupId>

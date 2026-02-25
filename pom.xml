@@ -15,6 +15,9 @@
         <module>aicrm-common</module>
         <module>aicrm-module-system</module>
         <module>aicrm-module-crm</module>
+        <module>aicrm-module-fieldwork</module>
+        <module>aicrm-module-activity</module>
+        <module>aicrm-module-social</module>
         <module>aicrm-server</module>
     </modules>
 
@@ -57,6 +60,21 @@
             <dependency>
                 <groupId>com.aicrm</groupId>
                 <artifactId>aicrm-module-crm</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.aicrm</groupId>
+                <artifactId>aicrm-module-fieldwork</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.aicrm</groupId>
+                <artifactId>aicrm-module-activity</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.aicrm</groupId>
+                <artifactId>aicrm-module-social</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
