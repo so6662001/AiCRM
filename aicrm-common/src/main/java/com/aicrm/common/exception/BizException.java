@@ -1,0 +1,30 @@
+package com.aicrm.common.exception;
+
+import lombok.Getter;
+
+@Getter
+public class BizException extends RuntimeException {
+
+    private final int code;
+
+    public BizException(String message) {
+        this(422, message);
+    }
+
+    public BizException(int code, String message) {
+        super(message);
+        this.code = code;
+    }
+
+    public static BizException notFound(String entity) {
+        return new BizException(404, entity + "不存在");
+    }
+
+    public static BizException forbidden(String message) {
+        return new BizException(403, message);
+    }
+
+    public static BizException conflict(String message) {
+        return new BizException(409, message);
+    }
+}

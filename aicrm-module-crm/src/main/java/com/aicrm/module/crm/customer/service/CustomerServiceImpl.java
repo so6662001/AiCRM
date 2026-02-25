@@ -3,6 +3,7 @@ package com.aicrm.module.crm.customer.service;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.util.StrUtil;
+import com.aicrm.common.exception.BizException;
 import com.aicrm.common.page.PageResult;
 import com.aicrm.common.tenant.TenantContext;
 import com.aicrm.module.crm.customer.dto.*;
@@ -96,13 +97,16 @@ public class CustomerServiceImpl implements CustomerService {
     public CustomerVO getById(Long id) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            return null;
+            throw new BizException("租户ID不能为空");
         }
 
         LambdaQueryWrapper<Customer> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Customer::getId, id).eq(Customer::getTenantId, tenantId);
         Customer customer = customerMapper.selectOne(wrapper);
-        return customer != null ? convertToVO(customer) : null;
+        if (customer == null) {
+            throw BizException.notFound("客户");
+        }
+        return convertToVO(customer);
     }
 
     @Override
@@ -276,10 +280,10 @@ public class CustomerServiceImpl implements CustomerService {
         LambdaQueryWrapper<Customer> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Customer::getTenantId, TenantContext.getTenantId())
                 .likeRight(Customer::getCustomerNo, prefix)
-                .orderByDesc(Customer::getCustomerNo)
-                .last("LIMIT 1");
+                .orderByDesc(Customer::getCustomerNo);
 
-        Customer last = customerMapper.selectOne(wrapper);
+        Page<Customer> p = customerMapper.selectPage(new Page<>(1, 1), wrapper);
+        Customer last = p.getRecords().isEmpty() ? null : p.getRecords().get(0);
         int seq = 1;
         if (last != null && last.getCustomerNo() != null && last.getCustomerNo().length() >= prefix.length() + 4) {
             try {

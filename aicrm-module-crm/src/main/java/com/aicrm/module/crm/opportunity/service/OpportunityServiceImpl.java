@@ -3,6 +3,7 @@ package com.aicrm.module.crm.opportunity.service;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.util.StrUtil;
+import com.aicrm.common.exception.BizException;
 import com.aicrm.common.page.PageResult;
 import com.aicrm.common.tenant.TenantContext;
 import com.aicrm.module.crm.customer.entity.Customer;
@@ -77,13 +78,16 @@ public class OpportunityServiceImpl implements OpportunityService {
     public OpportunityVO getById(Long id) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            return null;
+            throw new BizException("租户ID不能为空");
         }
 
         LambdaQueryWrapper<Opportunity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Opportunity::getId, id).eq(Opportunity::getTenantId, tenantId);
         Opportunity opportunity = opportunityMapper.selectOne(wrapper);
-        return opportunity != null ? convertToVO(opportunity) : null;
+        if (opportunity == null) {
+            throw BizException.notFound("商机");
+        }
+        return convertToVO(opportunity);
     }
 
     @Override
@@ -268,10 +272,10 @@ public class OpportunityServiceImpl implements OpportunityService {
         LambdaQueryWrapper<Opportunity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Opportunity::getTenantId, tenantId)
                 .likeRight(Opportunity::getOpportunityNo, prefix)
-                .orderByDesc(Opportunity::getOpportunityNo)
-                .last("LIMIT 1");
+                .orderByDesc(Opportunity::getOpportunityNo);
 
-        Opportunity last = opportunityMapper.selectOne(wrapper);
+        Page<Opportunity> p = opportunityMapper.selectPage(new Page<>(1, 1), wrapper);
+        Opportunity last = p.getRecords().isEmpty() ? null : p.getRecords().get(0);
         int seq = 1;
         if (last != null && last.getOpportunityNo() != null && last.getOpportunityNo().length() >= prefix.length() + 4) {
             try {

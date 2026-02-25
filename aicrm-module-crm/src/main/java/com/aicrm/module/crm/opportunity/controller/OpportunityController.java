@@ -1,19 +1,19 @@
 package com.aicrm.module.crm.opportunity.controller;
 
+import com.aicrm.common.core.Result;
 import com.aicrm.common.page.PageResult;
 import com.aicrm.module.crm.opportunity.dto.*;
 import com.aicrm.module.crm.opportunity.service.OpportunityService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 
-/**
- * 商机管理控制器
- */
 @RestController
 @RequestMapping("/v1/opportunities")
 @RequiredArgsConstructor
@@ -24,63 +24,67 @@ public class OpportunityController {
 
     @GetMapping
     @Operation(summary = "分页查询商机")
-    public PageResult<OpportunityVO> page(@Valid OpportunityQueryDTO query) {
-        return opportunityService.page(query);
+    public Result<PageResult<OpportunityVO>> page(@Valid OpportunityQueryDTO query) {
+        return Result.ok(opportunityService.page(query));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "获取商机详情")
-    public OpportunityVO getById(@PathVariable Long id) {
-        return opportunityService.getById(id);
+    public Result<OpportunityVO> getById(@PathVariable Long id) {
+        return Result.ok(opportunityService.getById(id));
     }
 
     @PostMapping
     @Operation(summary = "创建商机")
-    public Long create(@Valid @RequestBody OpportunityCreateDTO dto) {
-        return opportunityService.create(dto);
+    public Result<Long> create(@Valid @RequestBody OpportunityCreateDTO dto) {
+        return Result.ok(opportunityService.create(dto));
     }
 
-    @PutMapping
+    @PutMapping("/{id}")
     @Operation(summary = "更新商机")
-    public void update(@Valid @RequestBody OpportunityUpdateDTO dto) {
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody OpportunityUpdateDTO dto) {
+        dto.setId(id);
         opportunityService.update(dto);
+        return Result.ok();
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "删除商机")
-    public void delete(@PathVariable Long id) {
+    public Result<Void> delete(@PathVariable Long id) {
         opportunityService.delete(id);
+        return Result.ok();
     }
 
     @PutMapping("/{id}/stage")
     @Operation(summary = "变更商机阶段")
-    public void changeStage(@PathVariable Long id, @Valid @RequestBody StageChangeDTO dto) {
+    public Result<Void> changeStage(@PathVariable Long id, @Valid @RequestBody StageChangeDTO dto) {
         opportunityService.changeStage(id, dto);
+        return Result.ok();
     }
 
     @PostMapping("/{id}/win")
     @Operation(summary = "赢单")
-    public void win(@PathVariable Long id, @Valid @RequestBody WinRequest request) {
+    public Result<Void> win(@PathVariable Long id, @RequestBody WinRequest request) {
         opportunityService.win(id, request.getActualAmount());
+        return Result.ok();
     }
 
     @PostMapping("/{id}/lose")
     @Operation(summary = "输单")
-    public void lose(@PathVariable Long id, @Valid @RequestBody LoseRequest request) {
+    public Result<Void> lose(@PathVariable Long id, @RequestBody LoseRequest request) {
         opportunityService.lose(id, request.getLossReason());
+        return Result.ok();
     }
 
-    @lombok.Data
-    @io.swagger.v3.oas.annotations.media.Schema(description = "赢单请求")
+    @Data
+    @Schema(description = "赢单请求")
     public static class WinRequest {
-        @io.swagger.v3.oas.annotations.media.Schema(description = "实际成交金额")
         private BigDecimal actualAmount;
     }
 
-    @lombok.Data
-    @io.swagger.v3.oas.annotations.media.Schema(description = "输单请求")
+    @Data
+    @Schema(description = "输单请求")
     public static class LoseRequest {
-        @io.swagger.v3.oas.annotations.media.Schema(description = "输单原因")
         private String lossReason;
     }
 }

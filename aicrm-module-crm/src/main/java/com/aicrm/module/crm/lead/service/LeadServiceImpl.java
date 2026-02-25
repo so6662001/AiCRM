@@ -45,7 +45,7 @@ public class LeadServiceImpl implements LeadService {
                 .eq(StrUtil.isNotBlank(query.getIntentionLevel()), Lead::getIntentionLevel, query.getIntentionLevel())
                 .eq(StrUtil.isNotBlank(query.getSource()), Lead::getSource, query.getSource())
                 .eq(query.getOwnerUserId() != null, Lead::getOwnerUserId, query.getOwnerUserId())
-                .eq(query.getInPool() != null, Lead::getInPool, query.getInPool() ? 1 : 0)
+                .eq(query.getInPool() != null, Lead::getInPool, Boolean.TRUE.equals(query.getInPool()) ? 1 : 0)
                 .ge(query.getCreatedTimeStart() != null, Lead::getCreatedTime, query.getCreatedTimeStart())
                 .le(query.getCreatedTimeEnd() != null, Lead::getCreatedTime, query.getCreatedTimeEnd());
 
@@ -91,7 +91,7 @@ public class LeadServiceImpl implements LeadService {
                 .eq(Lead::getTenantId, tenantId));
 
         if (lead == null) {
-            throw new BizException("线索不存在");
+            throw BizException.notFound("线索");
         }
 
         return convertToVO(lead);
@@ -129,7 +129,7 @@ public class LeadServiceImpl implements LeadService {
                 .eq(Lead::getTenantId, tenantId));
 
         if (existLead == null) {
-            throw new BizException("线索不存在");
+            throw BizException.notFound("线索");
         }
 
         Lead lead = new Lead();
@@ -151,7 +151,7 @@ public class LeadServiceImpl implements LeadService {
                 .eq(Lead::getTenantId, tenantId));
 
         if (lead == null) {
-            throw new BizException("线索不存在");
+            throw BizException.notFound("线索");
         }
 
         leadMapper.deleteById(id);
@@ -195,7 +195,7 @@ public class LeadServiceImpl implements LeadService {
                 .eq(Lead::getTenantId, tenantId));
 
         if (lead == null) {
-            throw new BizException("线索不存在");
+            throw BizException.notFound("线索");
         }
 
         lead.setInPool(1);
@@ -221,10 +221,10 @@ public class LeadServiceImpl implements LeadService {
         LambdaQueryWrapper<Lead> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Lead::getTenantId, tenantId)
                 .likeRight(Lead::getLeadNo, prefix)
-                .orderByDesc(Lead::getLeadNo)
-                .last("LIMIT 1");
+                .orderByDesc(Lead::getLeadNo);
 
-        Lead lastLead = leadMapper.selectOne(wrapper);
+        Page<Lead> p = leadMapper.selectPage(new Page<>(1, 1), wrapper);
+        Lead lastLead = p.getRecords().isEmpty() ? null : p.getRecords().get(0);
         int seq = 1;
         if (lastLead != null && lastLead.getLeadNo() != null && lastLead.getLeadNo().length() >= prefix.length() + 4) {
             try {

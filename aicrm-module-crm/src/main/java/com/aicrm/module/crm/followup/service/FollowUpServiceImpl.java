@@ -1,5 +1,6 @@
 package com.aicrm.module.crm.followup.service;
 
+import com.aicrm.common.exception.BizException;
 import com.aicrm.common.page.PageResult;
 import com.aicrm.common.tenant.TenantContext;
 import com.aicrm.module.crm.followup.dto.FollowUpCreateDTO;
@@ -46,7 +47,7 @@ public class FollowUpServiceImpl implements FollowUpService {
                         .eq(FollowUpRecord::getTenantId, tenantId)
         );
         if (record == null) {
-            return null;
+            throw BizException.notFound("跟进记录");
         }
         return toVO(record);
     }
@@ -105,7 +106,7 @@ public class FollowUpServiceImpl implements FollowUpService {
                 .eq(query.getCustomerId() != null, FollowUpRecord::getCustomerId, query.getCustomerId())
                 .eq(query.getFollowType() != null, FollowUpRecord::getFollowType, query.getFollowType())
                 .eq(query.getFollowUserId() != null, FollowUpRecord::getFollowUserId, query.getFollowUserId())
-                .eq(query.getHasViolation() != null, FollowUpRecord::getHasViolation, query.getHasViolation() ? 1 : 0)
+                .eq(query.getHasViolation() != null, FollowUpRecord::getHasViolation, Boolean.TRUE.equals(query.getHasViolation()) ? 1 : 0)
                 .ge(query.getCreatedTimeStart() != null, FollowUpRecord::getCreatedTime, query.getCreatedTimeStart())
                 .le(query.getCreatedTimeEnd() != null, FollowUpRecord::getCreatedTime, query.getCreatedTimeEnd())
                 .orderByDesc(FollowUpRecord::getCreatedTime);

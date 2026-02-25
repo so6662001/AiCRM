@@ -1,5 +1,6 @@
 package com.aicrm.module.crm.followup.controller;
 
+import com.aicrm.common.core.Result;
 import com.aicrm.common.page.PageResult;
 import com.aicrm.module.crm.followup.dto.FollowUpCreateDTO;
 import com.aicrm.module.crm.followup.dto.FollowUpQueryDTO;
@@ -10,19 +11,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-/**
- * 跟进记录控制器
- */
 @RestController
 @RequestMapping("/v1/follow-ups")
 @RequiredArgsConstructor
@@ -33,32 +23,34 @@ public class FollowUpController {
 
     @GetMapping
     @Operation(summary = "分页查询跟进记录")
-    public PageResult<FollowUpVO> page(@ModelAttribute FollowUpQueryDTO query) {
-        return followUpService.page(query);
+    public Result<PageResult<FollowUpVO>> page(@ModelAttribute FollowUpQueryDTO query) {
+        return Result.ok(followUpService.page(query));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "根据ID获取跟进记录详情")
-    public FollowUpVO getById(@PathVariable Long id) {
-        return followUpService.getById(id);
+    public Result<FollowUpVO> getById(@PathVariable Long id) {
+        return Result.ok(followUpService.getById(id));
     }
 
     @PostMapping
     @Operation(summary = "创建跟进记录")
-    public Long create(@Valid @RequestBody FollowUpCreateDTO dto) {
-        return followUpService.create(dto);
+    public Result<Long> create(@Valid @RequestBody FollowUpCreateDTO dto) {
+        return Result.ok(followUpService.create(dto));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "更新跟进记录")
-    public void update(@PathVariable Long id, @Valid @RequestBody FollowUpUpdateDTO dto) {
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody FollowUpUpdateDTO dto) {
         dto.setId(id);
         followUpService.update(dto);
+        return Result.ok();
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "删除跟进记录")
-    public void delete(@PathVariable Long id) {
+    public Result<Void> delete(@PathVariable Long id) {
         followUpService.delete(id);
+        return Result.ok();
     }
 }
