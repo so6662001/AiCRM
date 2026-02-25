@@ -865,24 +865,44 @@ GET    /v1/enterprise/contact-quota                -- 查看配额使用情况
 
 ## 16. 活动管理 API
 
+活动分为"需要报名"和"不需要报名"两类，API 统一，按 `activityCategory` 区分逻辑。
+
 ```
-POST   /v1/activities                              -- 创建活动
-GET    /v1/activities                              -- 活动列表
+POST   /v1/activities                              -- 创建活动（含类别/报名配置/表单字段）
+GET    /v1/activities                              -- 活动列表（支持按类别/状态筛选）
 GET    /v1/activities/{id}                         -- 活动详情
 PUT    /v1/activities/{id}                         -- 更新活动
 DELETE /v1/activities/{id}                         -- 删除活动
+PUT    /v1/activities/{id}/publish                 -- 发布活动
+PUT    /v1/activities/{id}/cancel                  -- 取消活动
+PUT    /v1/activities/{id}/end                     -- 手动结束
+PUT    /v1/activities/{id}/close-registration      -- 手动截止报名（需报名类）
+POST   /v1/activities/{id}/clone                   -- 复制活动
 GET    /v1/activities/{id}/qrcode                  -- 获取活动二维码
-GET    /v1/activities/{id}/qrcode/download          -- 下载二维码图片
+GET    /v1/activities/{id}/qrcode/download          -- 下载二维码图片（支持尺寸参数）
 
-POST   /v1/activities/{id}/participants             -- 添加参与人
+POST   /v1/activities/{id}/participants             -- 添加参与人（手动）
 GET    /v1/activities/{id}/participants             -- 参与人列表
-POST   /v1/activities/{id}/participants/import      -- 批量导入参与人
-POST   /v1/activities/{id}/participants/{pid}/checkin -- 参与人签到
-POST   /v1/activities/{id}/participants/{pid}/convert -- 转为线索/客户
-GET    /v1/activities/{id}/statistics               -- 活动数据统计
+PUT    /v1/activities/{id}/participants/{pid}       -- 更新参与人
+DELETE /v1/activities/{id}/participants/{pid}       -- 删除参与人
+POST   /v1/activities/{id}/participants/import      -- 批量导入
+GET    /v1/activities/{id}/participants/export      -- 导出参与人
+POST   /v1/activities/{id}/participants/{pid}/approve  -- 审核通过（需报名类）
+POST   /v1/activities/{id}/participants/{pid}/reject   -- 审核拒绝（需报名类）
+POST   /v1/activities/{id}/participants/batch-approve  -- 批量审核
+POST   /v1/activities/{id}/participants/{pid}/checkin  -- 签到（需报名类）
+POST   /v1/activities/{id}/participants/batch-checkin  -- 批量签到
+POST   /v1/activities/{id}/participants/{pid}/convert  -- 转线索/客户
+POST   /v1/activities/{id}/participants/{pid}/feedback -- 提交反馈
 
-GET    /v1/open/activities/{activityNo}/info        -- 扫码获取活动信息（公开）
-POST   /v1/open/activities/{activityNo}/register    -- 扫码报名（公开）
+GET    /v1/activities/{id}/statistics               -- 活动数据统计
+GET    /v1/activities/{id}/scan-logs                -- 扫码记录
+GET    /v1/activities/summary                       -- 活动汇总报表
+
+GET    /v1/open/activities/{activityNo}/info           -- 扫码获取活动信息（公开）
+POST   /v1/open/activities/{activityNo}/register       -- 扫码报名（需报名类，公开）
+POST   /v1/open/activities/{activityNo}/scan           -- 记录扫码（不需报名类，公开）
+GET    /v1/open/activities/{activityNo}/check-registered -- 检查是否已报名（公开）
 ```
 
 ---
