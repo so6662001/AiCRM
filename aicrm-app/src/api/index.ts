@@ -101,3 +101,15 @@ export const trajectoryApi = {
   report: (data: any) => api.post('/v1/trajectories/report', data),
   daily: (userId: number, date: string) => api.get(`/v1/trajectories/${userId}/daily`, { date }),
 }
+
+// ========== 企业查询 ==========
+export const enterpriseApi = {
+  search: (keyword: string) => api.get('/v1/enterprise/search', { keyword }),
+  queryContacts: (creditCode: string) => api.get(`/v1/enterprise/${creditCode}/contacts`),
+  getQuota: () => api.get('/v1/enterprise/contact-quota'),
+}
+
+// ========== 报表 ==========
+export const reportApi = {
+  personal: (period: string) => api.get('/v1/reports/sales/personal', { period }),
+}
