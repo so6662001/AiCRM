@@ -18,19 +18,34 @@ AiCRM 是一个**平台级多租户 CRM 系统**，核心功能包括客户管�
 AiCRM
 ├── 线索管理（Leads）
 ├── 客户管理（Customers）
+│   ├── 客户360°视图（含ERP欠款与往来明细）
+│   ├── 黑名单管理（Blacklist）
+│   ├── 无效客户管理（Invalid）
+│   └── 采购日期跟踪（Purchase Tracking）
 ├── 商机管理（Opportunities）
 ├── 线索分配（Lead Distribution）
 ├── 客户跟进（Follow-up）
 ├── ERP 集成（ERP Integration）
+│   └── 应收账款与往来明细查询
 ├── 外勤管理（Field Work）
 │   ├── 签到/打卡（Check-in）
 │   ├── 拜访管理（Visit Management）
+│   ├── 行动轨迹（Trajectory）
 │   ├── 电话录音采集与 AI 分析
 │   └── 任务管理（Task Management）
+├── 活动管理（Activity）
+│   ├── 活动二维码
+│   └── 参与人管理
+├── 好友管理（Friend/Social）
+│   ├── 平台好友
+│   └── 企业微信好友
+├── 企业信息查询（五度易链集成）
+├── 销售数据报表（Sales Reports）
 └── 平台管理
     ├── 多租户管理（Multi-Tenant）
     ├── 组织架构（Organization）
     ├── 权限管理（Permission）
+    ├── 企业微信配置
     └── 系统配置（Configuration）
 ```
 
@@ -442,19 +457,21 @@ role_permission (角色权限)
 |---|---|---|
 | `aicrm-gateway` | API 网关 | 路由、鉴权、限流、租户识别 |
 | `aicrm-lead` | 线索服务 | 线索 CRUD、线索分配、公海池 |
-| `aicrm-customer` | 客户服务 | 客户 CRUD、客户查重、客户转移 |
+| `aicrm-customer` | 客户服务 | 客户 CRUD、客户查重、客户转移、黑名单、无效客户、采购日期、五度易链查询 |
 | `aicrm-opportunity` | 商机服务 | 商机 CRUD、阶段管理、销售漏斗 |
 | `aicrm-followup` | 跟进服务 | 跟进记录、拜访管理、签到 |
 | `aicrm-task` | 任务服务 | 工作任务、任务分配、完成跟踪 |
-| `aicrm-erp` | ERP 集成服务 | ERP 数据同步、字段映射、适配器 |
+| `aicrm-erp` | ERP 集成服务 | ERP 数据同步、字段映射、适配器、应收账款查询、往来明细 |
 | `aicrm-ai` | AI 分析服务 | 录音转写、内容分析、违规检测 |
-| `aicrm-fieldwork` | 外勤服务 | 打卡签到、位置采集、录音采集 |
+| `aicrm-fieldwork` | 外勤服务 | 打卡签到、位置采集、录音采集、行动轨迹 |
 | `aicrm-notify` | 通知服务 | 消息推送、短信、邮件、APP通知 |
 | `aicrm-tenant` | 租户服务 | 租户管理、套餐管理 |
 | `aicrm-org` | 组织权限服务 | 组织架构、角色权限、数据权限 |
 | `aicrm-file` | 文件服务 | 文件上传/下载、OSS管理 |
 | `aicrm-audit` | 审计服务 | 操作日志、审计追踪 |
-| `aicrm-report` | 报表服务 | 销售报表、业绩统计、数据分析 |
+| `aicrm-report` | 报表服务 | 销售报表、业绩统计、数据分析、个人/团队详细报表 |
+| `aicrm-activity` | 活动管理服务 | 活动 CRUD、二维码生成、参与人管理、扫码落地页 |
+| `aicrm-social` | 社交关系服务 | 好友管理、企业微信集成、好友-客户关联 |
 
 ### 7.2 服务间依赖关系
 
@@ -509,7 +526,9 @@ aicrm/
 │   ├── aicrm-org/                    -- 组织权限
 │   ├── aicrm-file/                   -- 文件服务
 │   ├── aicrm-audit/                  -- 审计服务
-│   └── aicrm-report/                 -- 报表服务
+│   ├── aicrm-report/                 -- 报表服务
+│   ├── aicrm-activity/               -- 活动管理服务
+│   └── aicrm-social/                 -- 社交关系服务（好友+企微）
 ├── aicrm-api/                        -- 服务间 API 接口定义
 │   ├── aicrm-api-lead/
 │   ├── aicrm-api-customer/

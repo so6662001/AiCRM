@@ -72,9 +72,11 @@
 │  │ aicrm-tenant       │ 5 ~ 10           │ ~20,000 (缓存高)  │ │
 │  │ aicrm-report       │ 10 ~ 20          │ ~5,000 (计算密集)  │ │
 │  │ aicrm-audit        │ 10 ~ 15          │ ~15,000 (异步写)  │ │
+│  │ aicrm-activity     │ 10 ~ 15          │ ~12,000           │ │
+│  │ aicrm-social       │ 10 ~ 15          │ ~12,000           │ │
 │  └─────────────────────┴──────────────────┴───────────────────┘ │
 │                                                                   │
-│  总实例数：250 ~ 400+ 实例                                       │
+│  总实例数：270 ~ 430+ 实例                                       │
 │  建议 K8s 集群节点：80 ~ 120 台 (8C16G 或 16C32G)               │
 └───────────────────────────┬─────────────────────────────────────┘
                             │
@@ -578,7 +580,10 @@ aicrm-pc/
 │   │   ├── FollowUpTimeline.vue      -- 跟进时间线
 │   │   ├── SalesFunnel.vue           -- 销售漏斗
 │   │   ├── RecordingPlayer.vue       -- 录音播放器
-│   │   └── AiAnalysisCard.vue        -- AI分析卡片
+│   │   ├── AiAnalysisCard.vue        -- AI分析卡片
+│   │   ├── TrajectoryMapView.vue     -- 轨迹地图 (V2)
+│   │   ├── PurchaseCountdown.vue     -- 采购倒计时 (V2)
+│   │   └── EnterpriseInfo.vue        -- 企业信息卡 (V2)
 │   ├── views/
 │   │   ├── dashboard/                -- 仪表盘
 │   │   ├── lead/                     -- 线索管理
@@ -612,12 +617,24 @@ aicrm-pc/
 │   │   │   ├── VisitReport.vue
 │   │   │   ├── PerformanceRanking.vue
 │   │   │   └── ConversionAnalysis.vue
+│   │   ├── trajectory/              -- 行动轨迹 (V2)
+│   │   │   └── TrajectoryMap.vue
+│   │   ├── enterprise/              -- 企业查询 (V2)
+│   │   │   └── EnterpriseSearch.vue
+│   │   ├── activity/                -- 活动管理 (V2)
+│   │   │   ├── ActivityList.vue
+│   │   │   ├── ActivityDetail.vue
+│   │   │   └── ParticipantList.vue
+│   │   ├── friend/                  -- 好友管理 (V2)
+│   │   │   ├── FriendList.vue
+│   │   │   └── FriendDetail.vue
 │   │   └── settings/                 -- 系统设置
 │   │       ├── OrgManage.vue         -- 组织管理
 │   │       ├── RoleManage.vue        -- 角色权限
 │   │       ├── StageConfig.vue       -- 阶段配置
 │   │       ├── PoolConfig.vue        -- 公海池配置
-│   │       └── ViolationWordConfig.vue -- 违规词管理
+│   │       ├── ViolationWordConfig.vue -- 违规词管理
+│   │       └── WechatWorkConfig.vue  -- 企业微信配置 (V2)
 │   ├── store/                        -- Pinia 状态管理
 │   ├── router/                       -- 路由
 │   ├── utils/                        -- 工具函数
@@ -644,10 +661,12 @@ aicrm-pc/
 | **Phase 5: 外勤 APP** | 6 周 | APP 基础框架、签到打卡、拜访管理、任务管理 |
 | **Phase 6: AI 能力** | 4 周 | 录音采集、语音转写、AI 分析、违规检测 |
 | **Phase 7: PC 前端** | 6 周 | PC 端所有页面、微前端集成、报表 |
-| **Phase 8: 性能优化** | 4 周 | 缓存优化、分库分表、压测调优 |
-| **Phase 9: 上线准备** | 3 周 | 安全审计、压力测试、灰度发布、文档 |
+| **Phase 8: 活动与社交** | 4 周 | 活动管理、二维码、好友管理、企业微信集成 |
+| **Phase 9: 扩展功能** | 4 周 | 行动轨迹、五度易链企业查询、黑名单、采购日期、销售员报表 |
+| **Phase 10: 性能优化** | 4 周 | 缓存优化、分库分表、压测调优 |
+| **Phase 11: 上线准备** | 3 周 | 安全审计、压力测试、灰度发布、文档 |
 
-**总计：约 40 周（10 个月）**
+**总计：约 48 周（12 个月）**
 
 ### 10.2 团队建议
 

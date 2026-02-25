@@ -198,7 +198,15 @@ GET /v1/customers/{id}
 {
   "code": 200,
   "data": {
-    "customer": { ... },
+    "customer": {
+      "...": "基本字段",
+      "expectedPurchaseDate": "2026-03-05",
+      "purchaseCountdown": {
+        "status": "upcoming",
+        "daysRemaining": 8,
+        "displayText": "还剩 8 天"
+      }
+    },
     "contacts": [ ... ],
     "recentFollowUps": [ ... ],
     "opportunities": [ ... ],
@@ -208,11 +216,35 @@ GET /v1/customers/{id}
       "syncStatus": "synced",
       "lastSyncTime": "2026-02-20T10:00:00"
     },
+    "erpFinancial": {
+      "totalReceivable": 350000.00,
+      "overdueAmount": 120000.00,
+      "creditLimit": 500000.00,
+      "creditAvailable": 150000.00,
+      "agingAnalysis": [
+        { "period": "0-30天", "amount": 150000.00 },
+        { "period": "31-60天", "amount": 80000.00 },
+        { "period": "61-90天", "amount": 70000.00 },
+        { "period": "90天以上", "amount": 50000.00 }
+      ],
+      "recentTransactions": [
+        {
+          "transactionType": "销售出库",
+          "documentNo": "SO-2026-0215",
+          "transactionDate": "2026-02-20",
+          "debitAmount": 180000.00,
+          "creditAmount": 0,
+          "balance": 350000.00
+        }
+      ]
+    },
+    "friends": [ ... ],
     "statistics": {
       "totalFollowUps": 15,
       "totalVisits": 5,
       "totalDealAmount": 1500000,
-      "daysSinceLastFollow": 3
+      "daysSinceLastFollow": 3,
+      "friendCount": 3
     }
   }
 }
@@ -227,7 +259,25 @@ PUT    /v1/customers/{id}/contacts/{cid}   -- 更新联系人
 DELETE /v1/customers/{id}/contacts/{cid}   -- 删除联系人
 ```
 
-### 3.3 客户审核
+### 3.3 客户黑名单与无效管理
+
+```
+POST   /v1/customers/{id}/blacklist                -- 加入黑名单
+POST   /v1/customers/{id}/blacklist/release         -- 解除黑名单
+GET    /v1/customers/blacklist                      -- 黑名单列表
+POST   /v1/customers/{id}/mark-invalid              -- 标记为无效客户
+POST   /v1/customers/{id}/reactivate                -- 重新激活
+GET    /v1/customers/invalid                        -- 无效客户列表
+```
+
+### 3.4 客户 ERP 财务数据
+
+```
+GET    /v1/customers/{id}/erp-receivables          -- ERP应收账款（实时调用ERP）
+GET    /v1/customers/{id}/erp-transactions          -- ERP往来明细（实时调用ERP）
+```
+
+### 3.5 客户审核
 
 ```
 POST   /v1/customers/{id}/submit-approval  -- 提交审核
@@ -785,7 +835,96 @@ GET    /v1/admin/tenants/{id}/statistics    -- 租户使用统计
 
 ---
 
-## 14. 服务间内部 API (gRPC/Feign)
+## 14. 行动轨迹 API
+
+```
+GET    /v1/trajectories/{userId}/daily             -- 某用户某日轨迹
+GET    /v1/trajectories/team                       -- 团队轨迹（管理层）
+POST   /v1/location-reports                        -- APP上报位置
+```
+
+---
+
+## 15. 企业信息查询 API（五度易链）
+
+```
+GET    /v1/enterprise/search                       -- 搜索企业（标注是否平台客户）
+GET    /v1/enterprise/{creditCode}                 -- 企业详情
+GET    /v1/enterprise/{creditCode}/risk            -- 企业风险信息
+POST   /v1/enterprise/{creditCode}/import          -- 导入为客户/线索
+```
+
+---
+
+## 16. 活动管理 API
+
+```
+POST   /v1/activities                              -- 创建活动
+GET    /v1/activities                              -- 活动列表
+GET    /v1/activities/{id}                         -- 活动详情
+PUT    /v1/activities/{id}                         -- 更新活动
+DELETE /v1/activities/{id}                         -- 删除活动
+GET    /v1/activities/{id}/qrcode                  -- 获取活动二维码
+GET    /v1/activities/{id}/qrcode/download          -- 下载二维码图片
+
+POST   /v1/activities/{id}/participants             -- 添加参与人
+GET    /v1/activities/{id}/participants             -- 参与人列表
+POST   /v1/activities/{id}/participants/import      -- 批量导入参与人
+POST   /v1/activities/{id}/participants/{pid}/checkin -- 参与人签到
+POST   /v1/activities/{id}/participants/{pid}/convert -- 转为线索/客户
+GET    /v1/activities/{id}/statistics               -- 活动数据统计
+
+GET    /v1/open/activities/{activityNo}/info        -- 扫码获取活动信息（公开）
+POST   /v1/open/activities/{activityNo}/register    -- 扫码报名（公开）
+```
+
+---
+
+## 17. 好友管理 API
+
+```
+GET    /v1/friends                                 -- 好友列表
+GET    /v1/friends/{id}                           -- 好友详情
+POST   /v1/friends                                 -- 手动添加好友
+PUT    /v1/friends/{id}                           -- 更新好友信息
+DELETE /v1/friends/{id}                           -- 删除好友
+POST   /v1/friends/{id}/convert-to-lead            -- 好友转线索
+POST   /v1/friends/{id}/link-customer              -- 好友关联客户
+GET    /v1/friends/statistics                      -- 好友统计
+POST   /v1/friends/sync-wechat                     -- 同步企业微信好友
+```
+
+---
+
+## 18. 企业微信配置 API
+
+```
+POST   /v1/wechat-work/config                     -- 配置企业微信
+PUT    /v1/wechat-work/config/{id}                -- 更新配置
+POST   /v1/wechat-work/config/{id}/test           -- 测试连接
+GET    /v1/wechat-work/contact-way                -- 获取企业微信活码
+POST   /v1/wechat-work/callback                   -- 企业微信回调
+```
+
+---
+
+## 19. 销售员报表 API（扩展）
+
+```
+GET    /v1/reports/sales/personal                  -- 个人业绩报表
+GET    /v1/reports/sales/team                      -- 团队业绩报表（管理层）
+GET    /v1/reports/sales/{userId}/detail            -- 某销售员详细报表
+GET    /v1/reports/sales/action                    -- 行动力报告
+GET    /v1/reports/sales/conversion-funnel          -- 转化漏斗
+GET    /v1/reports/sales/anomaly                   -- 异常预警
+GET    /v1/reports/sales/trend                     -- 趋势分析
+```
+
+> 以上 14~19 章节的详细请求/响应格式请参见 [补充设计文档 V2](06-supplement-v2.md)。
+
+---
+
+## 20. 服务间内部 API (gRPC/Feign)
 
 这些 API 仅用于微服务之间的内部调用，不对外暴露：
 

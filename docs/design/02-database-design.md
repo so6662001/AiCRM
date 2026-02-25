@@ -11,6 +11,8 @@
 | `aicrm_fieldwork` | 外勤、打卡、拜访、录音等表 | 外勤相关数据 |
 | `aicrm_task` | 任务相关表 | 任务管理 |
 | `aicrm_file` | 文件元数据表 | 文件信息记录 |
+| `aicrm_activity` | 活动、参与人相关表 | 活动管理数据 |
+| `aicrm_social` | 好友关系、企业微信相关表 | 社交关系数据 |
 | `aicrm_audit` | 操作日志、审计表 | 审计数据（量大，定期归档） |
 
 ### 1.2 分表策略（ShardingSphere）
@@ -286,7 +288,7 @@ CREATE TABLE `customer` (
   `address`           VARCHAR(512) DEFAULT NULL COMMENT '详细地址',
   `longitude`         DECIMAL(10,7) DEFAULT NULL COMMENT '经度',
   `latitude`          DECIMAL(10,7) DEFAULT NULL COMMENT '纬度',
-  `lifecycle_stage`   TINYINT      NOT NULL DEFAULT 1 COMMENT '生命周期（1-潜在 2-意向 3-成交 4-活跃 5-VIP 6-流失）',
+  `lifecycle_stage`   TINYINT      NOT NULL DEFAULT 1 COMMENT '生命周期（1-潜在 2-意向 3-成交 4-活跃 5-VIP 6-流失 7-无效 8-黑名单）',
   `level`             CHAR(1)      DEFAULT NULL COMMENT '客户等级（A/B/C/D）',
   `owner_user_id`     BIGINT       NOT NULL COMMENT '负责人',
   `owner_org_id`      BIGINT       DEFAULT NULL COMMENT '负责人所属组织',
@@ -295,6 +297,7 @@ CREATE TABLE `customer` (
   `last_follow_time`  DATETIME     DEFAULT NULL COMMENT '最后跟进时间',
   `follow_count`      INT          NOT NULL DEFAULT 0 COMMENT '跟进次数',
   `next_follow_time`  DATETIME     DEFAULT NULL COMMENT '下次计划跟进时间',
+  `expected_purchase_date` DATE    DEFAULT NULL COMMENT '预计采购日期',
   `deal_amount`       DECIMAL(15,2) DEFAULT 0 COMMENT '累计成交金额',
   `deal_count`        INT          NOT NULL DEFAULT 0 COMMENT '成交次数',
   `erp_customer_id`   VARCHAR(64)  DEFAULT NULL COMMENT 'ERP客户ID（同步用）',
@@ -316,7 +319,8 @@ CREATE TABLE `customer` (
   KEY `idx_tenant_stage` (`tenant_id`, `lifecycle_stage`),
   KEY `idx_tenant_erp` (`tenant_id`, `erp_customer_id`),
   KEY `idx_tenant_name` (`tenant_id`, `customer_name`),
-  KEY `idx_tenant_created` (`tenant_id`, `created_time`)
+  KEY `idx_tenant_created` (`tenant_id`, `created_time`),
+  KEY `idx_tenant_purchase_date` (`tenant_id`, `expected_purchase_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='客户表';
 ```
 
@@ -815,7 +819,26 @@ work_task (0..1) ── (1) visit_record
 
 erp_sync_log (1) ── (N) erp_sync_detail
 notification (N) ── (1) user
+
+activity (1) ──── (N) activity_participant
+activity_participant (0..1) ── (1) customer
+activity_participant (0..1) ── (1) lead
+activity_participant (0..1) ── (1) friend
+
+friend (0..1) ── (1) customer
+friend (0..1) ── (1) customer_contact
+friend (0..1) ── (1) lead
+friend (N) ──── (1) user (销售员)
+
+customer (1) ──── (N) customer_blacklist
+tenant (1) ──── (1) tenant_wechat_work_config
+tenant (1) ──── (N) third_party_config
+user (1) ──── (N) location_report
 ```
+
+> **注意**：V2 新增表（location_report、third_party_config、enterprise_query_cache、
+> customer_blacklist、activity、activity_participant、tenant_wechat_work_config、friend）
+> 的完整 DDL 定义请参见 [补充设计文档 V2](06-supplement-v2.md)。
 
 ---
 
