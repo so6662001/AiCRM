@@ -23,3 +23,7 @@ VALUES
 (5, 1, '谈判阶段', 'NEGOTIATION', 90, 5, 0, 0, 1, NOW(), NOW(), 0),
 (6, 1, '赢单', 'WON', 100, 6, 1, 0, 1, NOW(), NOW(), 0),
 (7, 1, '输单', 'LOST', 0, 7, 0, 1, 1, NOW(), NOW(), 0);
+
+-- 五度易链第三方配置(DEMO)
+INSERT IGNORE INTO `third_party_config` (`id`, `tenant_id`, `provider`, `api_base_url`, `app_key`, `app_secret`, `daily_quota`, `daily_used`, `contact_daily_quota`, `contact_daily_used`, `contact_monthly_quota`, `contact_monthly_used`, `status`, `created_time`, `updated_time`, `deleted`, `version`)
+VALUES (1, 1, 'wdyl', 'https://api.wdyl.com', 'demo_key', 'demo_secret', 100, 0, 50, 0, 500, 0, 1, NOW(), NOW(), 0, 1);

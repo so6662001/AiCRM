@@ -84,3 +84,29 @@ export const orgApi = {
 export const tenantApi = {
     list: () => http.get('/admin/tenants'),
 };
+export const blacklistApi = {
+    page: (p) => http.get('/customers/blacklist', { params: p }),
+    add: (d) => http.post('/customers/blacklist', d),
+    release: (id, d) => http.post(`/customers/blacklist/${id}/release`, d),
+    check: (p) => http.get('/customers/blacklist/check', { params: p }),
+};
+export const enterpriseApi = {
+    search: (keyword) => http.get('/enterprise/search', { params: { keyword } }),
+    queryContacts: (creditCode) => http.get(`/enterprise/${creditCode}/contacts`),
+    importContact: (creditCode, contactId, d) => http.post(`/enterprise/${creditCode}/contacts/${contactId}/import`, d),
+    getQuota: () => http.get('/enterprise/contact-quota'),
+};
+export const reportApi = {
+    personal: (period) => http.get('/reports/sales/personal', { params: { period } }),
+    team: (period) => http.get('/reports/sales/team', { params: { period } }),
+};
+export const erpFinanceApi = {
+    receivables: (customerId) => http.get(`/customers/${customerId}/erp-receivables`),
+    transactions: (customerId, p) => http.get(`/customers/${customerId}/erp-transactions`, { params: p }),
+};
+export const wechatWorkApi = {
+    getConfig: () => http.get('/wechat-work/config'),
+    saveConfig: (d) => http.post('/wechat-work/config', d),
+    updateConfig: (id, d) => http.put(`/wechat-work/config/${id}`, d),
+    testConnection: (id) => http.post(`/wechat-work/config/${id}/test`),
+};

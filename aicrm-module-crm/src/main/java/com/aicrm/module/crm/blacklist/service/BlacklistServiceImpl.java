@@ -88,6 +88,9 @@ public class BlacklistServiceImpl implements BlacklistService {
 
         CustomerBlacklist entity = new CustomerBlacklist();
         entity.setCustomerId(dto.getCustomerId());
+        entity.setCompanyName(dto.getCompanyName());
+        entity.setCreditCode(dto.getCreditCode());
+        entity.setContactPhone(dto.getContactPhone());
         entity.setBlacklistType(dto.getBlacklistType());
         entity.setReason(dto.getReason());
         entity.setStatus(STATUS_ACTIVE);
@@ -99,7 +102,9 @@ public class BlacklistServiceImpl implements BlacklistService {
         if (dto.getCustomerId() != null) {
             Customer customer = customerMapper.selectById(dto.getCustomerId());
             if (customer != null) {
-                entity.setCompanyName(customer.getCustomerName());
+                if (entity.getCompanyName() == null) {
+                    entity.setCompanyName(customer.getCustomerName());
+                }
                 customerMapper.update(null, new LambdaUpdateWrapper<Customer>()
                         .eq(Customer::getId, dto.getCustomerId())
                         .set(Customer::getLifecycleStage, LIFECYCLE_BLACKLIST));

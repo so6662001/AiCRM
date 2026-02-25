@@ -419,3 +419,76 @@ CREATE TABLE IF NOT EXISTS `work_task` (
   `version`           INT          NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`)
 );
+
+CREATE TABLE IF NOT EXISTS `third_party_config` (
+  `id` BIGINT NOT NULL, `tenant_id` BIGINT NOT NULL,
+  `provider` VARCHAR(32) NOT NULL, `api_base_url` VARCHAR(512) DEFAULT NULL,
+  `app_key` VARCHAR(256) DEFAULT NULL, `app_secret` VARCHAR(256) DEFAULT NULL,
+  `daily_quota` INT NOT NULL DEFAULT 100, `daily_used` INT NOT NULL DEFAULT 0,
+  `contact_daily_quota` INT NOT NULL DEFAULT 50, `contact_daily_used` INT NOT NULL DEFAULT 0,
+  `contact_monthly_quota` INT DEFAULT NULL, `contact_monthly_used` INT NOT NULL DEFAULT 0,
+  `status` TINYINT NOT NULL DEFAULT 1,
+  `created_by` BIGINT DEFAULT NULL, `created_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by` BIGINT DEFAULT NULL, `updated_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `deleted` TINYINT NOT NULL DEFAULT 0, `version` INT NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `enterprise_query_cache` (
+  `id` BIGINT NOT NULL, `tenant_id` BIGINT NOT NULL,
+  `company_name` VARCHAR(256) NOT NULL, `credit_code` VARCHAR(32) DEFAULT NULL,
+  `legal_person` VARCHAR(64) DEFAULT NULL, `registered_capital` VARCHAR(64) DEFAULT NULL,
+  `established_date` DATE DEFAULT NULL, `company_status` VARCHAR(32) DEFAULT NULL,
+  `company_type` VARCHAR(64) DEFAULT NULL, `industry` VARCHAR(128) DEFAULT NULL,
+  `province` VARCHAR(32) DEFAULT NULL, `city` VARCHAR(32) DEFAULT NULL,
+  `address` VARCHAR(512) DEFAULT NULL, `business_scope` CLOB DEFAULT NULL,
+  `contact_phone` VARCHAR(64) DEFAULT NULL, `contact_email` VARCHAR(128) DEFAULT NULL,
+  `website` VARCHAR(256) DEFAULT NULL, `source` VARCHAR(32) NOT NULL DEFAULT 'wdyl',
+  `is_platform_customer` TINYINT NOT NULL DEFAULT 0, `matched_customer_id` BIGINT DEFAULT NULL,
+  `query_time` TIMESTAMP NOT NULL, `expire_time` TIMESTAMP NOT NULL,
+  `created_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `enterprise_contact` (
+  `id` BIGINT NOT NULL, `tenant_id` BIGINT NOT NULL,
+  `credit_code` VARCHAR(32) NOT NULL, `company_name` VARCHAR(256) NOT NULL,
+  `contact_name` VARCHAR(64) DEFAULT NULL, `position` VARCHAR(128) DEFAULT NULL,
+  `department` VARCHAR(128) DEFAULT NULL, `phone` VARCHAR(32) DEFAULT NULL,
+  `telephone` VARCHAR(64) DEFAULT NULL, `email` VARCHAR(256) DEFAULT NULL,
+  `source` VARCHAR(32) NOT NULL DEFAULT 'wdyl', `source_type` VARCHAR(32) DEFAULT NULL,
+  `reliability` TINYINT DEFAULT NULL, `is_imported` TINYINT NOT NULL DEFAULT 0,
+  `imported_customer_id` BIGINT DEFAULT NULL, `imported_contact_id` BIGINT DEFAULT NULL,
+  `query_user_id` BIGINT NOT NULL, `query_time` TIMESTAMP NOT NULL,
+  `created_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `deleted` TINYINT NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `customer_blacklist` (
+  `id` BIGINT NOT NULL, `tenant_id` BIGINT NOT NULL,
+  `customer_id` BIGINT DEFAULT NULL, `company_name` VARCHAR(256) NOT NULL,
+  `credit_code` VARCHAR(32) DEFAULT NULL, `contact_phone` VARCHAR(32) DEFAULT NULL,
+  `blacklist_type` TINYINT NOT NULL, `reason` CLOB NOT NULL,
+  `evidence_urls` CLOB DEFAULT NULL, `status` TINYINT NOT NULL DEFAULT 1,
+  `operated_by` BIGINT NOT NULL, `release_by` BIGINT DEFAULT NULL,
+  `release_time` TIMESTAMP DEFAULT NULL, `release_reason` VARCHAR(512) DEFAULT NULL,
+  `created_by` BIGINT DEFAULT NULL, `created_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by` BIGINT DEFAULT NULL, `updated_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `deleted` TINYINT NOT NULL DEFAULT 0, `version` INT NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `tenant_wechat_work_config` (
+  `id` BIGINT NOT NULL, `tenant_id` BIGINT NOT NULL,
+  `corp_id` VARCHAR(64) NOT NULL, `agent_id` VARCHAR(64) NOT NULL,
+  `secret` VARCHAR(256) NOT NULL, `contact_secret` VARCHAR(256) DEFAULT NULL,
+  `customer_secret` VARCHAR(256) DEFAULT NULL, `callback_token` VARCHAR(128) DEFAULT NULL,
+  `callback_aes_key` VARCHAR(256) DEFAULT NULL, `contact_way_id` VARCHAR(64) DEFAULT NULL,
+  `welcome_msg` VARCHAR(1024) DEFAULT NULL, `status` TINYINT NOT NULL DEFAULT 1,
+  `created_by` BIGINT DEFAULT NULL, `created_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by` BIGINT DEFAULT NULL, `updated_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `deleted` TINYINT NOT NULL DEFAULT 0, `version` INT NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`)
+);

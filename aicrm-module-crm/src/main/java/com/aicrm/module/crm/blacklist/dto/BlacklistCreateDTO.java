@@ -7,14 +7,14 @@ import lombok.Data;
 import java.io.Serializable;
 import java.util.List;
 
-/**
- * 黑名单创建DTO
- */
 @Data
 public class BlacklistCreateDTO implements Serializable {
 
-    @NotNull(message = "客户ID不能为空")
     private Long customerId;
+    @NotBlank(message = "公司名称不能为空")
+    private String companyName;
+    private String creditCode;
+    private String contactPhone;
     @NotNull(message = "黑名单类型不能为空")
     private Integer blacklistType;
     @NotBlank(message = "原因不能为空")
