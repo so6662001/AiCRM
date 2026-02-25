@@ -800,3 +800,71 @@ CREATE TABLE IF NOT EXISTS `opportunity_stage_log` (
   PRIMARY KEY (`id`),
   KEY `idx_tenant_opportunity` (`tenant_id`, `opportunity_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商机阶段变更日志表';
+
+-- 角色表
+CREATE TABLE IF NOT EXISTS `role` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `role_code`         VARCHAR(64)  NOT NULL COMMENT '角色编码',
+  `role_name`         VARCHAR(128) NOT NULL COMMENT '角色名称',
+  `role_type`         TINYINT      NOT NULL DEFAULT 2 COMMENT '类型（1-系统内置 2-自定义）',
+  `data_scope`        TINYINT      NOT NULL DEFAULT 4 COMMENT '数据范围（1-全部 2-本部门及以下 3-本部门 4-仅本人）',
+  `remark`            VARCHAR(512) DEFAULT NULL,
+  `status`            TINYINT      NOT NULL DEFAULT 1,
+  `created_by`        BIGINT       DEFAULT NULL,
+  `created_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by`        BIGINT       DEFAULT NULL,
+  `updated_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted`           TINYINT(1)   NOT NULL DEFAULT 0,
+  `version`           INT          NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_tenant_role_code` (`tenant_id`, `role_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色表';
+
+-- 角色权限表
+CREATE TABLE IF NOT EXISTS `role_permission` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `role_id`           BIGINT       NOT NULL,
+  `permission_code`   VARCHAR(128) NOT NULL COMMENT '权限编码',
+  `created_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_role_id` (`tenant_id`, `role_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色权限关联表';
+
+-- 用户角色关联表
+CREATE TABLE IF NOT EXISTS `user_role` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `user_id`           BIGINT       NOT NULL COMMENT '用户ID',
+  `role_id`           BIGINT       NOT NULL,
+  `org_id`            BIGINT       NOT NULL COMMENT '所属组织ID',
+  `created_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_tenant_user_role` (`tenant_id`, `user_id`, `role_id`),
+  KEY `idx_org_id` (`tenant_id`, `org_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户角色关联表';
+
+-- 租户ERP配置表
+CREATE TABLE IF NOT EXISTS `tenant_erp_config` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `erp_type`         VARCHAR(32)  DEFAULT NULL,
+  `erp_name`         VARCHAR(128) NOT NULL,
+  `api_base_url`     VARCHAR(512) NOT NULL,
+  `auth_type`         VARCHAR(32)  NOT NULL DEFAULT 'api_key',
+  `auth_config`       TEXT         DEFAULT NULL,
+  `field_mapping`     TEXT         DEFAULT NULL,
+  `sync_strategy`     VARCHAR(32)  NOT NULL DEFAULT 'manual',
+  `sync_cron`         VARCHAR(128) DEFAULT NULL,
+  `status`            TINYINT      NOT NULL DEFAULT 1,
+  `last_sync_time`    DATETIME     DEFAULT NULL,
+  `created_by`        BIGINT       DEFAULT NULL,
+  `created_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by`        BIGINT       DEFAULT NULL,
+  `updated_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted`           TINYINT(1)   NOT NULL DEFAULT 0,
+  `version`           INT          NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `idx_tenant_id` (`tenant_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='租户ERP配置表';

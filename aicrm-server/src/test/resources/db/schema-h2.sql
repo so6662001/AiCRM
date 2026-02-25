@@ -712,3 +712,62 @@ CREATE TABLE IF NOT EXISTS `opportunity_stage_log` (
   `created_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 );
+
+CREATE TABLE IF NOT EXISTS `role` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `role_code`         VARCHAR(64)  NOT NULL,
+  `role_name`         VARCHAR(128) NOT NULL,
+  `role_type`         TINYINT      NOT NULL DEFAULT 2,
+  `data_scope`        TINYINT      NOT NULL DEFAULT 4,
+  `remark`            VARCHAR(512) DEFAULT NULL,
+  `status`            TINYINT      NOT NULL DEFAULT 1,
+  `created_by`        BIGINT       DEFAULT NULL,
+  `created_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by`        BIGINT       DEFAULT NULL,
+  `updated_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `deleted`           TINYINT      NOT NULL DEFAULT 0,
+  `version`           INT          NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `role_permission` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `role_id`           BIGINT       NOT NULL,
+  `permission_code`   VARCHAR(128) NOT NULL,
+  `created_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `user_role` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `user_id`           BIGINT       NOT NULL,
+  `role_id`           BIGINT       NOT NULL,
+  `org_id`            BIGINT       NOT NULL,
+  `created_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `tenant_erp_config` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `erp_type`          VARCHAR(32)  DEFAULT NULL,
+  `erp_name`          VARCHAR(128) NOT NULL,
+  `api_base_url`      VARCHAR(512) NOT NULL,
+  `auth_type`         VARCHAR(32)  NOT NULL DEFAULT 'api_key',
+  `auth_config`       CLOB         DEFAULT NULL,
+  `field_mapping`      CLOB         DEFAULT NULL,
+  `sync_strategy`     VARCHAR(32)  NOT NULL DEFAULT 'manual',
+  `sync_cron`         VARCHAR(128) DEFAULT NULL,
+  `status`            TINYINT      NOT NULL DEFAULT 1,
+  `last_sync_time`    TIMESTAMP    DEFAULT NULL,
+  `created_by`        BIGINT       DEFAULT NULL,
+  `created_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by`        BIGINT       DEFAULT NULL,
+  `updated_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `deleted`           TINYINT      NOT NULL DEFAULT 0,
+  `version`           INT          NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`)
+);
