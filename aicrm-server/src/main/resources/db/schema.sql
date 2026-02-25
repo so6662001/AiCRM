@@ -539,6 +539,63 @@ CREATE TABLE IF NOT EXISTS `customer_blacklist` (
   PRIMARY KEY (`id`), KEY `idx_tenant_status` (`tenant_id`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 电话录音表
+CREATE TABLE IF NOT EXISTS `call_recording` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `user_id`           BIGINT       DEFAULT NULL,
+  `customer_id`       BIGINT       DEFAULT NULL,
+  `contact_id`        BIGINT       DEFAULT NULL,
+  `visit_id`          BIGINT       DEFAULT NULL,
+  `call_type`         TINYINT      DEFAULT NULL COMMENT '1呼出 2呼入',
+  `caller_number`     VARCHAR(32)  DEFAULT NULL,
+  `callee_number`     VARCHAR(32)  DEFAULT NULL,
+  `call_start_time`   DATETIME     DEFAULT NULL,
+  `call_end_time`     DATETIME     DEFAULT NULL,
+  `call_duration`     INT          DEFAULT NULL COMMENT '秒',
+  `recording_file_url` VARCHAR(512) DEFAULT NULL,
+  `recording_file_size` BIGINT     DEFAULT NULL,
+  `recording_format`  VARCHAR(32)  DEFAULT NULL,
+  `transcription_status` TINYINT   DEFAULT 0 COMMENT '0未转写 1转写中 2已转写 3失败',
+  `transcription_text` TEXT       DEFAULT NULL,
+  `ai_summary`        TEXT         DEFAULT NULL,
+  `ai_keywords`       VARCHAR(512) DEFAULT NULL,
+  `ai_sentiment`      VARCHAR(128) DEFAULT NULL,
+  `violation_check_status` TINYINT DEFAULT 0 COMMENT '0未检 1检中 2已检',
+  `has_violation`     TINYINT(1)   NOT NULL DEFAULT 0,
+  `violation_detail`  TEXT         DEFAULT NULL,
+  `violation_level`   TINYINT      DEFAULT NULL,
+  `source`            VARCHAR(64)  DEFAULT NULL,
+  `created_by`        BIGINT       DEFAULT NULL,
+  `created_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by`        BIGINT       DEFAULT NULL,
+  `updated_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted`           TINYINT(1)   NOT NULL DEFAULT 0,
+  `version`           INT          NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `idx_tenant_user` (`tenant_id`, `user_id`),
+  KEY `idx_tenant_customer` (`tenant_id`, `customer_id`),
+  KEY `idx_tenant_call_time` (`tenant_id`, `call_start_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='电话录音表';
+
+-- 违规词库表
+CREATE TABLE IF NOT EXISTS `violation_word` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `word`              VARCHAR(128) NOT NULL,
+  `category`          VARCHAR(64)  DEFAULT NULL COMMENT '虚假承诺/过度宣传/恶意攻击/其他',
+  `level`             TINYINT      NOT NULL COMMENT '1低 2中 3高',
+  `status`            TINYINT      NOT NULL DEFAULT 1,
+  `created_by`        BIGINT       DEFAULT NULL,
+  `created_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by`        BIGINT       DEFAULT NULL,
+  `updated_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted`           TINYINT(1)   NOT NULL DEFAULT 0,
+  `version`           INT          NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `idx_tenant_id` (`tenant_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='违规词库表';
+
 -- 租户企业微信配置表
 CREATE TABLE IF NOT EXISTS `tenant_wechat_work_config` (
   `id` BIGINT NOT NULL, `tenant_id` BIGINT NOT NULL,
@@ -552,3 +609,71 @@ CREATE TABLE IF NOT EXISTS `tenant_wechat_work_config` (
   `deleted` TINYINT(1) NOT NULL DEFAULT 0, `version` INT NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`), KEY `idx_tenant_id` (`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 客户联系人表
+CREATE TABLE IF NOT EXISTS `customer_contact` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `customer_id`       BIGINT       NOT NULL,
+  `contact_name`      VARCHAR(64)  NOT NULL,
+  `gender`            TINYINT      DEFAULT 0 COMMENT '0未知 1男 2女',
+  `position`          VARCHAR(64)  DEFAULT NULL,
+  `department`        VARCHAR(128) DEFAULT NULL,
+  `phone`             VARCHAR(32)  DEFAULT NULL,
+  `telephone`         VARCHAR(64)  DEFAULT NULL,
+  `email`             VARCHAR(128) DEFAULT NULL,
+  `wechat`            VARCHAR(64)  DEFAULT NULL,
+  `is_primary`        TINYINT      DEFAULT 0 COMMENT '0否 1是',
+  `is_decision_maker` TINYINT      DEFAULT 0 COMMENT '0否 1是',
+  `remark`            TEXT         DEFAULT NULL,
+  `created_by`        BIGINT       DEFAULT NULL,
+  `created_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by`        BIGINT       DEFAULT NULL,
+  `updated_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted`           TINYINT(1)  NOT NULL DEFAULT 0,
+  `version`           INT          NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `idx_tenant_customer` (`tenant_id`, `customer_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='客户联系人表';
+
+-- 消息通知表
+CREATE TABLE IF NOT EXISTS `notification` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `user_id`           BIGINT       NOT NULL,
+  `title`             VARCHAR(256) NOT NULL,
+  `content`           TEXT         DEFAULT NULL,
+  `msg_type`          TINYINT      NOT NULL COMMENT '1任务提醒 2线索分配 3审核通知 4违规警报 5系统通知',
+  `biz_type`          VARCHAR(64)  DEFAULT NULL,
+  `biz_id`            BIGINT       DEFAULT NULL,
+  `is_read`           TINYINT      NOT NULL DEFAULT 0 COMMENT '0未读 1已读',
+  `read_time`         DATETIME     DEFAULT NULL,
+  `push_channels`     VARCHAR(256) DEFAULT NULL,
+  `push_status`       TINYINT      NOT NULL DEFAULT 1,
+  `created_by`        BIGINT       DEFAULT NULL,
+  `created_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by`        BIGINT       DEFAULT NULL,
+  `updated_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted`           TINYINT(1)  NOT NULL DEFAULT 0,
+  `version`           INT          NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `idx_tenant_user` (`tenant_id`, `user_id`),
+  KEY `idx_tenant_user_read` (`tenant_id`, `user_id`, `is_read`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='消息通知表';
+
+-- 客户审核表
+CREATE TABLE IF NOT EXISTS `customer_approval` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `customer_id`       BIGINT       NOT NULL,
+  `approval_type`     TINYINT      NOT NULL COMMENT '1新增 2ERP下发',
+  `status`            TINYINT      NOT NULL DEFAULT 1 COMMENT '1待审核 2通过 3拒绝',
+  `applicant_id`      BIGINT       DEFAULT NULL,
+  `approver_id`       BIGINT       DEFAULT NULL,
+  `approve_time`      DATETIME     DEFAULT NULL,
+  `approve_remark`    VARCHAR(512) DEFAULT NULL,
+  `created_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `deleted`           TINYINT(1)  NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `idx_tenant_status` (`tenant_id`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='客户审核表';

@@ -480,6 +480,57 @@ CREATE TABLE IF NOT EXISTS `customer_blacklist` (
   PRIMARY KEY (`id`)
 );
 
+CREATE TABLE IF NOT EXISTS `call_recording` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `user_id`           BIGINT       DEFAULT NULL,
+  `customer_id`       BIGINT       DEFAULT NULL,
+  `contact_id`        BIGINT       DEFAULT NULL,
+  `visit_id`          BIGINT       DEFAULT NULL,
+  `call_type`         TINYINT      DEFAULT NULL,
+  `caller_number`     VARCHAR(32)  DEFAULT NULL,
+  `callee_number`     VARCHAR(32)  DEFAULT NULL,
+  `call_start_time`   TIMESTAMP    DEFAULT NULL,
+  `call_end_time`     TIMESTAMP    DEFAULT NULL,
+  `call_duration`     INT          DEFAULT NULL,
+  `recording_file_url` VARCHAR(512) DEFAULT NULL,
+  `recording_file_size` BIGINT     DEFAULT NULL,
+  `recording_format`  VARCHAR(32)  DEFAULT NULL,
+  `transcription_status` TINYINT   DEFAULT 0,
+  `transcription_text` CLOB       DEFAULT NULL,
+  `ai_summary`        CLOB         DEFAULT NULL,
+  `ai_keywords`       VARCHAR(512) DEFAULT NULL,
+  `ai_sentiment`      VARCHAR(128) DEFAULT NULL,
+  `violation_check_status` TINYINT DEFAULT 0,
+  `has_violation`     TINYINT      NOT NULL DEFAULT 0,
+  `violation_detail`  CLOB         DEFAULT NULL,
+  `violation_level`   TINYINT      DEFAULT NULL,
+  `source`            VARCHAR(64)  DEFAULT NULL,
+  `created_by`        BIGINT       DEFAULT NULL,
+  `created_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by`        BIGINT       DEFAULT NULL,
+  `updated_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `deleted`           TINYINT      NOT NULL DEFAULT 0,
+  `version`           INT          NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `violation_word` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `word`              VARCHAR(128) NOT NULL,
+  `category`          VARCHAR(64)  DEFAULT NULL,
+  `level`             TINYINT      NOT NULL,
+  `status`            TINYINT      NOT NULL DEFAULT 1,
+  `created_by`        BIGINT       DEFAULT NULL,
+  `created_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by`        BIGINT       DEFAULT NULL,
+  `updated_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `deleted`           TINYINT      NOT NULL DEFAULT 0,
+  `version`           INT          NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`)
+);
+
 CREATE TABLE IF NOT EXISTS `tenant_wechat_work_config` (
   `id` BIGINT NOT NULL, `tenant_id` BIGINT NOT NULL,
   `corp_id` VARCHAR(64) NOT NULL, `agent_id` VARCHAR(64) NOT NULL,
@@ -490,5 +541,66 @@ CREATE TABLE IF NOT EXISTS `tenant_wechat_work_config` (
   `created_by` BIGINT DEFAULT NULL, `created_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_by` BIGINT DEFAULT NULL, `updated_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `deleted` TINYINT NOT NULL DEFAULT 0, `version` INT NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `customer_contact` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `customer_id`       BIGINT       NOT NULL,
+  `contact_name`      VARCHAR(64)  NOT NULL,
+  `gender`            TINYINT      DEFAULT 0,
+  `position`          VARCHAR(64)  DEFAULT NULL,
+  `department`        VARCHAR(128) DEFAULT NULL,
+  `phone`             VARCHAR(32)  DEFAULT NULL,
+  `telephone`         VARCHAR(64)  DEFAULT NULL,
+  `email`             VARCHAR(128) DEFAULT NULL,
+  `wechat`            VARCHAR(64)  DEFAULT NULL,
+  `is_primary`        TINYINT      DEFAULT 0,
+  `is_decision_maker` TINYINT      DEFAULT 0,
+  `remark`            CLOB         DEFAULT NULL,
+  `created_by`        BIGINT       DEFAULT NULL,
+  `created_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by`        BIGINT       DEFAULT NULL,
+  `updated_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `deleted`           TINYINT      NOT NULL DEFAULT 0,
+  `version`           INT          NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `notification` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `user_id`           BIGINT       NOT NULL,
+  `title`             VARCHAR(256) NOT NULL,
+  `content`           CLOB         DEFAULT NULL,
+  `msg_type`          TINYINT      NOT NULL,
+  `biz_type`          VARCHAR(64)  DEFAULT NULL,
+  `biz_id`            BIGINT       DEFAULT NULL,
+  `is_read`           TINYINT      NOT NULL DEFAULT 0,
+  `read_time`         TIMESTAMP    DEFAULT NULL,
+  `push_channels`     VARCHAR(256) DEFAULT NULL,
+  `push_status`       TINYINT      NOT NULL DEFAULT 1,
+  `created_by`        BIGINT       DEFAULT NULL,
+  `created_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by`        BIGINT       DEFAULT NULL,
+  `updated_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `deleted`           TINYINT      NOT NULL DEFAULT 0,
+  `version`           INT          NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `customer_approval` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `customer_id`       BIGINT       NOT NULL,
+  `approval_type`     TINYINT      NOT NULL,
+  `status`            TINYINT      NOT NULL DEFAULT 1,
+  `applicant_id`      BIGINT       DEFAULT NULL,
+  `approver_id`       BIGINT       DEFAULT NULL,
+  `approve_time`      TIMESTAMP    DEFAULT NULL,
+  `approve_remark`    VARCHAR(512) DEFAULT NULL,
+  `created_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `deleted`           TINYINT      NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 );

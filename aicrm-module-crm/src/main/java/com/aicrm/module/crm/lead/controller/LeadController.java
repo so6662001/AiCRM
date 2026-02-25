@@ -67,4 +67,12 @@ public class LeadController {
         leadService.returnToPool(id, dto != null ? dto.getReturnReason() : null);
         return Result.ok();
     }
+
+    @PostMapping("/{id}/convert")
+    @Operation(summary = "线索转化")
+    public Result<Long> convert(@PathVariable Long id, @RequestBody LeadConvertDTO dto) {
+        String customerName = dto != null ? dto.getCustomerName() : null;
+        boolean createOpportunity = dto != null && Boolean.TRUE.equals(dto.getCreateOpportunity());
+        return Result.ok(leadService.convert(id, customerName, createOpportunity));
+    }
 }

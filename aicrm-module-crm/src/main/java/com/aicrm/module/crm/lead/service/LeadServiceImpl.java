@@ -4,6 +4,8 @@ import cn.hutool.core.util.StrUtil;
 import com.aicrm.common.exception.BizException;
 import com.aicrm.common.page.PageResult;
 import com.aicrm.common.tenant.TenantContext;
+import com.aicrm.module.crm.customer.entity.Customer;
+import com.aicrm.module.crm.customer.mapper.CustomerMapper;
 import com.aicrm.module.crm.lead.dto.*;
 import com.aicrm.module.crm.lead.entity.Lead;
 import com.aicrm.module.crm.lead.mapper.LeadMapper;
@@ -28,9 +30,12 @@ import java.util.stream.Collectors;
 public class LeadServiceImpl implements LeadService {
 
     private static final String LEAD_NO_PREFIX = "LD";
+    private static final String CUSTOMER_NO_PREFIX = "CU";
+    private static final int STATUS_CONVERTED = 3;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     private final LeadMapper leadMapper;
+    private final CustomerMapper customerMapper;
 
     @Override
     public PageResult<LeadVO> page(LeadQueryDTO query) {
@@ -205,6 +210,72 @@ public class LeadServiceImpl implements LeadService {
         lead.setOwnerUserId(null);
         lead.setOwnerOrgId(null);
         leadMapper.updateById(lead);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long convert(Long id, String customerName, boolean createOpportunity) {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new BizException("租户ID不能为空");
+        }
+
+        Lead lead = leadMapper.selectOne(new LambdaQueryWrapper<Lead>()
+                .eq(Lead::getId, id)
+                .eq(Lead::getTenantId, tenantId));
+
+        if (lead == null) {
+            throw BizException.notFound("线索");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        lead.setStatus(STATUS_CONVERTED);
+        lead.setConvertTime(now);
+        leadMapper.updateById(lead);
+
+        Customer customer = new Customer();
+        customer.setCustomerName(customerName != null ? customerName : lead.getCompanyName());
+        if (customer.getCustomerName() == null || customer.getCustomerName().isBlank()) {
+            customer.setCustomerName("未命名客户");
+        }
+        customer.setOwnerUserId(lead.getOwnerUserId() != null ? lead.getOwnerUserId() : TenantContext.getUserId());
+        customer.setOwnerOrgId(lead.getOwnerOrgId());
+        customer.setSource("lead_convert");
+        customer.setSourceLeadId(lead.getId());
+        customer.setCustomerNo(generateCustomerNo(tenantId));
+        customer.setLifecycleStage(1);
+        customer.setFollowCount(0);
+        customer.setDealCount(0);
+        customer.setCustomerType(1);
+
+        customerMapper.insert(customer);
+
+        lead.setConvertCustomerId(customer.getId());
+        leadMapper.updateById(lead);
+
+        return customer.getId();
+    }
+
+    private String generateCustomerNo(Long tenantId) {
+        String datePrefix = LocalDate.now().format(DATE_FORMATTER);
+        String prefix = CUSTOMER_NO_PREFIX + datePrefix;
+
+        LambdaQueryWrapper<Customer> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Customer::getTenantId, tenantId)
+                .likeRight(Customer::getCustomerNo, prefix)
+                .orderByDesc(Customer::getCustomerNo);
+
+        Page<Customer> p = customerMapper.selectPage(new Page<>(1, 1), wrapper);
+        Customer last = p.getRecords().isEmpty() ? null : p.getRecords().get(0);
+        int seq = 1;
+        if (last != null && last.getCustomerNo() != null && last.getCustomerNo().length() >= prefix.length() + 4) {
+            try {
+                seq = Integer.parseInt(last.getCustomerNo().substring(prefix.length())) + 1;
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
+        return prefix + String.format("%04d", Math.min(seq, 9999));
     }
 
     private LeadVO convertToVO(Lead lead) {
