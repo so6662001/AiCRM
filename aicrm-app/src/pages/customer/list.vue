@@ -91,8 +91,8 @@ function onSearch() {
   loadList(true)
 }
 
-function onTabChange(stage: number | '') {
-  lifecycleStage.value = stage
+function onTabChange(stage: number | string) {
+  lifecycleStage.value = stage === '' ? '' : Number(stage)
   loadList(true)
 }
 
@@ -137,7 +137,7 @@ onReachBottom(() => {
           v-for="tab in stageTabs"
           :key="String(tab.value)"
           :class="['tab-item', lifecycleStage === tab.value ? 'active' : '']"
-          @click="onTabChange(tab.value)"
+          @click="onTabChange(tab.value as number | string)"
         >
           {{ tab.label }}
         </view>
