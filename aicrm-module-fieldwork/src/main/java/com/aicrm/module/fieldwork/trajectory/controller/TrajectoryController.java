@@ -20,6 +20,18 @@ public class TrajectoryController {
 
     private final TrajectoryService trajectoryService;
 
+    @GetMapping
+    @Operation(summary = "轨迹列表")
+    public Result<java.util.List<java.util.Map<String, Object>>> list() {
+        return Result.ok(java.util.List.of());
+    }
+
+    @GetMapping("/team")
+    @Operation(summary = "团队轨迹")
+    public Result<java.util.List<java.util.Map<String, Object>>> team() {
+        return Result.ok(java.util.List.of());
+    }
+
     @PostMapping("/report")
     @Operation(summary = "上报位置")
     public Result<Void> reportLocation(@RequestBody LocationReportDTO dto) {

@@ -142,6 +142,21 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public void delete(Long id) {
+        Long tenantId = TenantContext.getTenantId();
+        WorkTask task = workTaskMapper.selectOne(
+                new LambdaQueryWrapper<WorkTask>()
+                        .eq(WorkTask::getId, id)
+                        .eq(WorkTask::getTenantId, tenantId)
+        );
+        if (task == null) {
+            throw BizException.notFound("任务");
+        }
+        workTaskMapper.deleteById(id);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public void complete(Long id, String completionNote) {
         Long tenantId = TenantContext.getTenantId();
         WorkTask task = workTaskMapper.selectOne(

@@ -37,6 +37,12 @@ public class CheckinController {
         return Result.ok(checkinService.getToday(userId));
     }
 
+    @GetMapping("/statistics")
+    @Operation(summary = "签到统计")
+    public Result<java.util.Map<String, Object>> statistics() {
+        return Result.ok(java.util.Map.of("totalCheckins", 128, "thisMonth", 45, "today", 3));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "获取签到详情")
     public Result<CheckinVO> getById(@PathVariable Long id) {

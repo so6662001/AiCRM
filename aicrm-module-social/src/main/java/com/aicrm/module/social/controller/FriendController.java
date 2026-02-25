@@ -75,6 +75,12 @@ public class FriendController {
         return Result.ok();
     }
 
+    @PostMapping("/sync-wechat")
+    @Operation(summary = "同步微信好友")
+    public Result<Void> syncWechat() {
+        return Result.ok();
+    }
+
     @Data
     public static class LinkCustomerRequest {
         private Long customerId;

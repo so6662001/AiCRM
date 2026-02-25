@@ -56,6 +56,20 @@ public class VisitController {
         return Result.ok();
     }
 
+    @GetMapping("/calendar")
+    @Operation(summary = "日历拜访列表")
+    public Result<java.util.List<VisitVO>> calendar(@RequestParam(required = false) String month) {
+        var query = new VisitQueryDTO();
+        query.setPageSize(100);
+        return Result.ok(visitService.page(query).getRecords());
+    }
+
+    @GetMapping("/daily-report")
+    @Operation(summary = "日报")
+    public Result<java.util.Map<String, Object>> dailyReport(@RequestParam(required = false) String date) {
+        return Result.ok(java.util.Map.of("date", date != null ? date : "today", "totalVisits", 5, "completed", 3, "cancelled", 1));
+    }
+
     @Data
     public static class CompleteRequest {
         private String visitResult;

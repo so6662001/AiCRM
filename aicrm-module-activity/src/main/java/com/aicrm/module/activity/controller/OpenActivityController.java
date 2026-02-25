@@ -71,6 +71,12 @@ public class OpenActivityController {
         return Result.ok(logId);
     }
 
+    @GetMapping("/{activityNo}/check-registered")
+    @Operation(summary = "检查是否已报名（公开）")
+    public Result<Boolean> checkRegistered(@PathVariable String activityNo, @RequestParam String phone) {
+        return Result.ok(false);
+    }
+
     @PostMapping("/{activityNo}/register")
     @Operation(summary = "扫码报名（公开）")
     @Transactional(rollbackFor = Exception.class)

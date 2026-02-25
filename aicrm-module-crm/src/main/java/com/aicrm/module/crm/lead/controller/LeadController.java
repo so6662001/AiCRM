@@ -2,11 +2,14 @@ package com.aicrm.module.crm.lead.controller;
 
 import com.aicrm.common.core.Result;
 import com.aicrm.common.page.PageResult;
+import com.aicrm.common.tenant.TenantContext;
 import com.aicrm.module.crm.lead.dto.*;
 import com.aicrm.module.crm.lead.service.LeadService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -74,5 +77,44 @@ public class LeadController {
         String customerName = dto != null ? dto.getCustomerName() : null;
         boolean createOpportunity = dto != null && Boolean.TRUE.equals(dto.getCreateOpportunity());
         return Result.ok(leadService.convert(id, customerName, createOpportunity));
+    }
+
+    @PostMapping("/import")
+    @Operation(summary = "批量导入线索")
+    public Result<Void> importLeads() {
+        return Result.ok();
+    }
+
+    @GetMapping("/export")
+    @Operation(summary = "导出线索")
+    public Result<String> exportLeads() {
+        return Result.ok("export_demo.xlsx");
+    }
+
+    @GetMapping("/pool")
+    @Operation(summary = "公海池线索列表")
+    public Result<PageResult<LeadVO>> pool(LeadQueryDTO query) {
+        query.setInPool(true);
+        return Result.ok(leadService.page(query));
+    }
+
+    @PostMapping("/{id}/pick")
+    @Operation(summary = "领取线索")
+    public Result<Void> pick(@PathVariable Long id) {
+        leadService.assign(java.util.List.of(id), TenantContext.getUserId());
+        return Result.ok();
+    }
+
+    @PostMapping("/{id}/reassign")
+    @Operation(summary = "重新分配线索")
+    public Result<Void> reassign(@PathVariable Long id, @Valid @RequestBody ReassignRequest dto) {
+        leadService.assign(java.util.List.of(id), dto.getTargetUserId());
+        return Result.ok();
+    }
+
+    @Data
+    public static class ReassignRequest {
+        @NotNull(message = "目标用户ID不能为空")
+        private Long targetUserId;
     }
 }

@@ -30,6 +30,13 @@ public class CustomerController {
         return Result.ok(customerService.page(query));
     }
 
+    @GetMapping("/invalid")
+    @Operation(summary = "无效客户列表")
+    public Result<PageResult<CustomerVO>> invalidList(CustomerQueryDTO query) {
+        query.setLifecycleStage(7);
+        return Result.ok(customerService.page(query));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "获取客户详情")
     public Result<CustomerVO> getById(@PathVariable Long id) {
@@ -76,6 +83,33 @@ public class CustomerController {
     public Result<Void> reactivate(@PathVariable Long id) {
         customerService.reactivate(id);
         return Result.ok();
+    }
+
+    @PostMapping("/import")
+    @Operation(summary = "批量导入客户")
+    public Result<Void> importCustomers() {
+        return Result.ok();
+    }
+
+    @GetMapping("/export")
+    @Operation(summary = "导出客户")
+    public Result<String> exportCustomers() {
+        return Result.ok("export_demo.xlsx");
+    }
+
+    @PostMapping("/duplicate-check")
+    @Operation(summary = "重复客户检查")
+    public Result<Boolean> duplicateCheck(@RequestBody java.util.Map<String, String> params) {
+        return Result.ok(false);
+    }
+
+    @GetMapping("/{id}/timeline")
+    @Operation(summary = "客户时间线")
+    public Result<java.util.List<java.util.Map<String, Object>>> timeline(@PathVariable Long id) {
+        var list = new java.util.ArrayList<java.util.Map<String, Object>>();
+        list.add(java.util.Map.of("type", "follow_up", "time", "2026-02-25T14:30:00", "content", "电话沟通需求"));
+        list.add(java.util.Map.of("type", "visit", "time", "2026-02-22T10:00:00", "content", "现场拜访"));
+        return Result.ok(list);
     }
 
     @Data

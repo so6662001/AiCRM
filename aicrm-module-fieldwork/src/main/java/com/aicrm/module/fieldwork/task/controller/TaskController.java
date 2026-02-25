@@ -33,10 +33,27 @@ public class TaskController {
         return Result.ok(taskService.page(query));
     }
 
+    @GetMapping("/today")
+    @Operation(summary = "今日任务列表")
+    public Result<java.util.List<TaskVO>> todayTasks() {
+        var query = new TaskQueryDTO();
+        query.setPageSize(50);
+        return Result.ok(taskService.page(query).getRecords());
+    }
+
     @GetMapping("/today/summary")
     @Operation(summary = "今日任务汇总")
     public Result<Map<String, Object>> todaySummary() {
         return Result.ok(taskService.todaySummary());
+    }
+
+    @GetMapping("/overdue")
+    @Operation(summary = "逾期任务列表")
+    public Result<java.util.List<TaskVO>> overdueTasks() {
+        var query = new TaskQueryDTO();
+        query.setStatus(4);
+        query.setPageSize(50);
+        return Result.ok(taskService.page(query).getRecords());
     }
 
     @GetMapping("/{id}")
@@ -63,6 +80,19 @@ public class TaskController {
     @Operation(summary = "完成任务")
     public Result<Void> complete(@PathVariable Long id, @RequestBody CompleteRequest request) {
         taskService.complete(id, request != null ? request.getCompletionNote() : null);
+        return Result.ok();
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "删除任务")
+    public Result<Void> delete(@PathVariable Long id) {
+        taskService.delete(id);
+        return Result.ok();
+    }
+
+    @PutMapping("/{id}/status")
+    @Operation(summary = "更新任务状态")
+    public Result<Void> updateStatus(@PathVariable Long id, @RequestBody java.util.Map<String, Integer> body) {
         return Result.ok();
     }
 

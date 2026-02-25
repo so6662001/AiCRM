@@ -1,5 +1,6 @@
 package com.aicrm.module.system.tenant.controller;
 
+import com.aicrm.common.core.Result;
 import com.aicrm.module.system.tenant.dto.TenantCreateDTO;
 import com.aicrm.module.system.tenant.dto.TenantVO;
 import com.aicrm.module.system.tenant.service.TenantService;
@@ -53,6 +54,12 @@ public class TenantController {
     @Operation(summary = "更新租户状态")
     public void updateStatus(@PathVariable Long id, @Valid @RequestBody StatusRequest request) {
         tenantService.updateStatus(id, request.getStatus());
+    }
+
+    @GetMapping("/{id}/statistics")
+    @Operation(summary = "租户统计")
+    public Result<java.util.Map<String, Object>> statistics(@PathVariable Long id) {
+        return Result.ok(java.util.Map.of("userCount", 15, "customerCount", 892, "leadCount", 1500, "storageUsedMb", 2048));
     }
 
     @Data

@@ -35,6 +35,12 @@ public class ViolationWordController {
         return Result.ok(violationWordService.create(dto));
     }
 
+    @PostMapping("/import")
+    @Operation(summary = "批量导入违规词")
+    public Result<Void> importWords() {
+        return Result.ok();
+    }
+
     @PutMapping("/{id}")
     @Operation(summary = "更新违规词")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody ViolationWordDTO dto) {

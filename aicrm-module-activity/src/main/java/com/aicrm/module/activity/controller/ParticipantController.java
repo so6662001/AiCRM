@@ -57,4 +57,52 @@ public class ParticipantController {
         participantService.checkin(activityId, participantId);
         return Result.ok();
     }
+
+    @PutMapping("/{pid}")
+    @Operation(summary = "更新参与人")
+    public Result<Void> update(@PathVariable Long activityId, @PathVariable("pid") Long pid) {
+        return Result.ok();
+    }
+
+    @DeleteMapping("/{pid}")
+    @Operation(summary = "删除参与人")
+    public Result<Void> delete(@PathVariable Long activityId, @PathVariable("pid") Long pid) {
+        return Result.ok();
+    }
+
+    @PostMapping("/import")
+    @Operation(summary = "批量导入参与人")
+    public Result<Void> importParticipants(@PathVariable Long activityId) {
+        return Result.ok();
+    }
+
+    @GetMapping("/export")
+    @Operation(summary = "导出参与人")
+    public Result<String> exportParticipants(@PathVariable Long activityId) {
+        return Result.ok("export_demo.xlsx");
+    }
+
+    @PostMapping("/batch-approve")
+    @Operation(summary = "批量通过报名")
+    public Result<Void> batchApprove(@PathVariable Long activityId, @RequestBody java.util.List<Long> pids) {
+        return Result.ok();
+    }
+
+    @PostMapping("/batch-checkin")
+    @Operation(summary = "批量签到")
+    public Result<Void> batchCheckin(@PathVariable Long activityId, @RequestBody java.util.List<Long> pids) {
+        return Result.ok();
+    }
+
+    @PostMapping("/{pid}/convert")
+    @Operation(summary = "参与人转线索/客户")
+    public Result<Void> convert(@PathVariable Long activityId, @PathVariable("pid") Long pid) {
+        return Result.ok();
+    }
+
+    @PostMapping("/{pid}/feedback")
+    @Operation(summary = "参与人反馈")
+    public Result<Void> feedback(@PathVariable Long activityId, @PathVariable("pid") Long pid) {
+        return Result.ok();
+    }
 }

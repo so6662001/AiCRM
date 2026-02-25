@@ -54,4 +54,13 @@ public class RecordingController {
         recordingService.triggerAnalyze(id);
         return Result.ok();
     }
+
+    @GetMapping("/violations")
+    @Operation(summary = "违规录音列表")
+    public Result<java.util.List<RecordingVO>> violations() {
+        var query = new RecordingQueryDTO();
+        query.setHasViolation(true);
+        query.setPageSize(50);
+        return Result.ok(recordingService.page(query).getRecords());
+    }
 }

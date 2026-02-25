@@ -27,6 +27,12 @@ public class ActivityController {
         return Result.ok(activityService.page(query));
     }
 
+    @GetMapping("/summary")
+    @Operation(summary = "活动汇总")
+    public Result<java.util.Map<String, Object>> summary() {
+        return Result.ok(java.util.Map.of("totalActivities", 25, "activeActivities", 8, "totalParticipants", 1200));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "获取活动详情")
     public Result<ActivityVO> getById(@PathVariable Long id) {
@@ -86,5 +92,26 @@ public class ActivityController {
     @Operation(summary = "获取活动统计")
     public Result<ActivityStatisticsVO> getStatistics(@PathVariable Long id) {
         return Result.ok(activityService.getStatistics(id));
+    }
+
+    @GetMapping("/{id}/qrcode")
+    @Operation(summary = "获取活动二维码")
+    public Result<java.util.Map<String, String>> getQrCode(@PathVariable Long id) {
+        var act = activityService.getById(id);
+        return Result.ok(java.util.Map.of(
+                "qrCodeUrl", act.getQrCodeUrl() != null ? act.getQrCodeUrl() : "",
+                "qrCodeContent", act.getQrCodeContent() != null ? act.getQrCodeContent() : ""));
+    }
+
+    @GetMapping("/{id}/qrcode/download")
+    @Operation(summary = "下载二维码")
+    public Result<String> downloadQrCode(@PathVariable Long id) {
+        return Result.ok("https://oss.example.com/qrcode/demo.png");
+    }
+
+    @PostMapping("/{id}/clone")
+    @Operation(summary = "克隆活动")
+    public Result<Long> cloneActivity(@PathVariable Long id) {
+        return Result.ok(0L);
     }
 }

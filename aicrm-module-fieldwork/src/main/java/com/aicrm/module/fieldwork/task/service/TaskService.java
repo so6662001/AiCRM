@@ -21,6 +21,8 @@ public interface TaskService {
 
     void update(TaskUpdateDTO dto);
 
+    void delete(Long id);
+
     void complete(Long id, String completionNote);
 
     Map<String, Object> todaySummary();

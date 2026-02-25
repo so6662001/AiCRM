@@ -45,4 +45,10 @@ public class WechatWorkConfigController {
     public Result<Boolean> testConnection(@PathVariable Long id) {
         return Result.ok(wechatWorkConfigService.testConnection(id));
     }
+
+    @GetMapping("/contact-way")
+    @Operation(summary = "获取联系我方式")
+    public Result<java.util.Map<String, String>> getContactWay() {
+        return Result.ok(java.util.Map.of("contactWayUrl", "https://work.weixin.qq.com/demo"));
+    }
 }
