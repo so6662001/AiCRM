@@ -836,8 +836,13 @@ tenant (1) ──── (N) third_party_config
 user (1) ──── (N) location_report
 ```
 
+enterprise_query_cache (1) ── (N) enterprise_contact
+enterprise_contact (0..1) ── (1) customer_contact (导入关联)
+enterprise_contact_query_log (N) ── (1) user (查询人)
+
 > **注意**：V2 新增表（location_report、third_party_config、enterprise_query_cache、
-> customer_blacklist、activity、activity_participant、tenant_wechat_work_config、friend）
+> enterprise_contact、enterprise_contact_query_log、customer_blacklist、
+> activity、activity_participant、tenant_wechat_work_config、friend）
 > 的完整 DDL 定义请参见 [补充设计文档 V2](06-supplement-v2.md)。
 
 ---

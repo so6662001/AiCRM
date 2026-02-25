@@ -211,8 +211,12 @@ CREATE TABLE `third_party_config` (
   `api_base_url`      VARCHAR(512) NOT NULL COMMENT 'API基础地址',
   `app_key`           VARCHAR(256) NOT NULL COMMENT 'AppKey（加密存储）',
   `app_secret`        VARCHAR(256) NOT NULL COMMENT 'AppSecret（加密存储）',
-  `daily_quota`       INT          NOT NULL DEFAULT 100 COMMENT '每日查询配额',
-  `daily_used`        INT          NOT NULL DEFAULT 0 COMMENT '今日已用次数',
+  `daily_quota`       INT          NOT NULL DEFAULT 100 COMMENT '企业搜索每日配额',
+  `daily_used`        INT          NOT NULL DEFAULT 0 COMMENT '企业搜索今日已用',
+  `contact_daily_quota` INT        NOT NULL DEFAULT 50 COMMENT '联系方式查询每日配额',
+  `contact_daily_used`  INT        NOT NULL DEFAULT 0 COMMENT '联系方式查询今日已用',
+  `contact_monthly_quota` INT      DEFAULT NULL COMMENT '联系方式查询月度配额（NULL=不限）',
+  `contact_monthly_used`  INT      NOT NULL DEFAULT 0 COMMENT '联系方式查询本月已用',
   `status`            TINYINT      NOT NULL DEFAULT 1 COMMENT '状态',
   `created_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -259,13 +263,144 @@ CREATE TABLE `enterprise_query_cache` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='企业信息查询缓存表';
 ```
 
-### S2.5 企业查询 API
+### S2.5 企业联系方式表 (enterprise_contact)
+
+五度易链的联系方式查询通常按次计费，因此查询到的联系方式需要本地持久化存储以便复用，避免重复付费查询。
+
+```sql
+CREATE TABLE `enterprise_contact` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `credit_code`       VARCHAR(32)  NOT NULL COMMENT '统一社会信用代码',
+  `company_name`      VARCHAR(256) NOT NULL COMMENT '企业名称',
+  `contact_name`      VARCHAR(64)  DEFAULT NULL COMMENT '联系人姓名',
+  `position`          VARCHAR(128) DEFAULT NULL COMMENT '职位/职务',
+  `department`        VARCHAR(128) DEFAULT NULL COMMENT '部门',
+  `phone`             VARCHAR(32)  DEFAULT NULL COMMENT '手机号',
+  `telephone`         VARCHAR(64)  DEFAULT NULL COMMENT '固话（可能含多个，逗号分隔）',
+  `email`             VARCHAR(256) DEFAULT NULL COMMENT '邮箱（可能含多个，逗号分隔）',
+  `source`            VARCHAR(32)  NOT NULL DEFAULT 'wdyl' COMMENT '数据来源（wdyl/tianyancha/qichacha）',
+  `source_type`       VARCHAR(32)  DEFAULT NULL COMMENT '来源分类（annual_report=年报/sec_filing=证监会/recruitment=招聘/other=其他）',
+  `reliability`       TINYINT      DEFAULT NULL COMMENT '可靠度（1-低 2-中 3-高）',
+  `is_imported`       TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '是否已导入为CRM联系人',
+  `imported_customer_id` BIGINT    DEFAULT NULL COMMENT '导入到的客户ID',
+  `imported_contact_id`  BIGINT    DEFAULT NULL COMMENT '导入后的联系人ID',
+  `query_user_id`     BIGINT       NOT NULL COMMENT '查询人',
+  `query_time`        DATETIME     NOT NULL COMMENT '查询时间',
+  `raw_data`          JSON         DEFAULT NULL COMMENT '原始响应数据',
+  `created_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted`           TINYINT(1)   NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `idx_tenant_credit_code` (`tenant_id`, `credit_code`),
+  KEY `idx_tenant_company` (`tenant_id`, `company_name`),
+  KEY `idx_tenant_phone` (`tenant_id`, `phone`),
+  KEY `idx_tenant_query_user` (`tenant_id`, `query_user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='企业联系方式表（五度易链查询结果）';
+```
+
+### S2.6 联系方式查询日志表 (enterprise_contact_query_log)
+
+每次调用五度易链查询联系方式都记录日志，用于配额管控、费用统计和审计追踪。
+
+```sql
+CREATE TABLE `enterprise_contact_query_log` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `credit_code`       VARCHAR(32)  NOT NULL COMMENT '查询企业信用代码',
+  `company_name`      VARCHAR(256) NOT NULL COMMENT '查询企业名称',
+  `query_user_id`     BIGINT       NOT NULL COMMENT '查询人ID',
+  `query_user_name`   VARCHAR(64)  DEFAULT NULL COMMENT '查询人姓名',
+  `query_type`        TINYINT      NOT NULL COMMENT '查询类型（1-首次查询 2-刷新查询）',
+  `result_count`      INT          NOT NULL DEFAULT 0 COMMENT '返回联系人数',
+  `phone_count`       INT          NOT NULL DEFAULT 0 COMMENT '返回手机号数',
+  `email_count`       INT          NOT NULL DEFAULT 0 COMMENT '返回邮箱数',
+  `is_cache_hit`      TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '是否命中缓存（命中则不消耗配额）',
+  `cost_points`       INT          NOT NULL DEFAULT 0 COMMENT '消耗积分/点数',
+  `status`            TINYINT      NOT NULL DEFAULT 1 COMMENT '状态（1-成功 2-失败 3-配额不足 4-接口异常）',
+  `error_message`     VARCHAR(512) DEFAULT NULL COMMENT '错误信息',
+  `request_data`      TEXT         DEFAULT NULL COMMENT '请求参数（JSON）',
+  `response_data`     TEXT         DEFAULT NULL COMMENT '响应数据摘要（JSON，脱敏）',
+  `created_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_tenant_user` (`tenant_id`, `query_user_id`),
+  KEY `idx_tenant_credit_code` (`tenant_id`, `credit_code`),
+  KEY `idx_tenant_time` (`tenant_id`, `created_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='企业联系方式查询日志表';
+```
+
+### S2.7 联系方式查询流程
+
+```
+┌───────────────────────────────────────────────────────────────────────┐
+│                  企业联系方式查询完整流程                                │
+│                                                                       │
+│  用户点击 [查询联系方式]                                               │
+│         │                                                             │
+│         ▼                                                             │
+│  ┌──────────────────┐                                                │
+│  │ 1. 检查本地缓存   │                                                │
+│  │ enterprise_contact│                                                │
+│  │ 按 credit_code    │                                                │
+│  │ 查询是否已有数据   │                                                │
+│  └────────┬─────────┘                                                │
+│           │                                                           │
+│     ┌─────▼─────┐                                                    │
+│     │ 有缓存？   │                                                    │
+│     └─────┬─────┘                                                    │
+│       是  │   否                                                      │
+│     ┌─────▼──────────────────┐   ┌─────▼──────────────────────────┐  │
+│     │ 判断缓存是否过期         │   │ 2. 检查配额                    │  │
+│     │ (默认30天有效)           │   │ contact_daily_used < quota ?  │  │
+│     │                        │   │ contact_monthly_used < quota ? │  │
+│     │ 未过期 → 直接返回缓存   │   └─────┬──────────────────────────┘  │
+│     │ (不消耗配额)            │         │                             │
+│     │                        │    配额充足 │ 配额不足                  │
+│     │ 已过期 → 用户可选择      │         │      │                     │
+│     │ [查看缓存] 或 [刷新]    │         │  ┌───▼───────────────┐     │
+│     └────────────────────────┘         │  │ 返回配额不足提示   │     │
+│                                        │  │ 展示已有缓存数据   │     │
+│                              ┌─────────▼┐ │ (如有)            │     │
+│                              │ 3. 调用    │ └───────────────────┘     │
+│                              │ 五度易链API│                           │
+│                              │ 查询联系方式│                           │
+│                              └─────┬─────┘                           │
+│                                    │                                  │
+│                              ┌─────▼─────────────────────────┐      │
+│                              │ 4. 处理返回结果                 │      │
+│                              │ ├── 写入 enterprise_contact    │      │
+│                              │ ├── 写入查询日志               │      │
+│                              │ ├── 更新配额计数               │      │
+│                              │ └── 手机号与CRM客户联系人匹配   │      │
+│                              │     标注哪些号码已在CRM中存在   │      │
+│                              └─────┬─────────────────────────┘      │
+│                                    │                                  │
+│                              ┌─────▼─────────────────────────┐      │
+│                              │ 5. 返回结果给前端               │      │
+│                              │ ├── 联系人列表                 │      │
+│                              │ ├── 每人可操作：               │      │
+│                              │ │   [导入为联系人]              │      │
+│                              │ │   [拨打电话]                 │      │
+│                              │ │   [复制号码]                 │      │
+│                              │ └── 配额剩余提示               │      │
+│                              └───────────────────────────────┘      │
+└───────────────────────────────────────────────────────────────────────┘
+```
+
+### S2.8 企业查询 API（完整）
 
 ```
 GET    /v1/enterprise/search                      -- 搜索企业（五度易链）
 GET    /v1/enterprise/{creditCode}                -- 企业详情
 GET    /v1/enterprise/{creditCode}/risk           -- 企业风险信息
+GET    /v1/enterprise/{creditCode}/contacts       -- 查询企业联系方式 ★
+GET    /v1/enterprise/{creditCode}/contacts/cache -- 仅查看本地缓存的联系方式（不调用API）
+POST   /v1/enterprise/{creditCode}/contacts/refresh -- 强制刷新联系方式（消耗配额）★
+POST   /v1/enterprise/{creditCode}/contacts/{contactId}/import -- 导入联系人到CRM客户 ★
+POST   /v1/enterprise/{creditCode}/contacts/batch-import       -- 批量导入联系人 ★
 POST   /v1/enterprise/{creditCode}/import         -- 将企业导入为客户/线索
+GET    /v1/enterprise/contact-query-logs          -- 联系方式查询日志
+GET    /v1/enterprise/contact-quota               -- 查看配额使用情况
 ```
 
 **企业搜索响应**：
@@ -291,6 +426,12 @@ GET /v1/enterprise/search?keyword=示例科技
           "customerName": "深圳示例科技有限公司",
           "ownerUserName": "李明",
           "lifecycleStage": "活跃客户"
+        },
+        "contactQueryStatus": {
+          "hasCache": true,
+          "cachedContactCount": 5,
+          "cacheTime": "2026-02-20T10:30:00",
+          "cacheExpired": false
         }
       },
       {
@@ -299,15 +440,201 @@ GET /v1/enterprise/search?keyword=示例科技
         "legalPerson": "李四",
         "registeredCapital": "1亿元",
         "isPlatformCustomer": false,
-        "platformCustomerInfo": null
+        "platformCustomerInfo": null,
+        "contactQueryStatus": {
+          "hasCache": false,
+          "cachedContactCount": 0,
+          "cacheTime": null,
+          "cacheExpired": false
+        }
       }
     ],
-    "total": 2
+    "total": 2,
+    "contactQuota": {
+      "dailyRemaining": 42,
+      "monthlyRemaining": 180
+    }
   }
 }
 ```
 
-### S2.6 平台企业匹配逻辑
+**查询企业联系方式响应**：
+```json
+GET /v1/enterprise/91440300MA5XXXXXX/contacts
+{
+  "code": 200,
+  "data": {
+    "companyName": "深圳示例科技有限公司",
+    "creditCode": "91440300MA5XXXXXX",
+    "dataSource": "cache",
+    "queryTime": "2026-02-20T10:30:00",
+    "cacheExpireTime": "2026-03-22T10:30:00",
+    "contacts": [
+      {
+        "id": 30001,
+        "contactName": "张三",
+        "position": "董事长/总经理",
+        "department": null,
+        "phone": "138****8000",
+        "phoneFull": "13800138000",
+        "telephone": "0755-8888****",
+        "telephoneFull": "0755-88881234",
+        "email": "zhang***@example.com",
+        "emailFull": "zhangsan@example.com",
+        "sourceType": "annual_report",
+        "sourceTypeLabel": "年报公示",
+        "reliability": 3,
+        "reliabilityLabel": "高",
+        "isImported": true,
+        "importedCustomerId": 5001,
+        "importedCustomerName": "深圳示例科技有限公司",
+        "existsInCrm": true,
+        "crmMatchInfo": {
+          "matchType": "phone",
+          "customerId": 5001,
+          "contactId": 6001,
+          "contactName": "张三"
+        }
+      },
+      {
+        "id": 30002,
+        "contactName": "李芳",
+        "position": "采购经理",
+        "department": "采购部",
+        "phone": "139****9000",
+        "phoneFull": "13900139000",
+        "telephone": null,
+        "telephoneFull": null,
+        "email": "li***@example.com",
+        "emailFull": "lifang@example.com",
+        "sourceType": "recruitment",
+        "sourceTypeLabel": "招聘信息",
+        "reliability": 2,
+        "reliabilityLabel": "中",
+        "isImported": false,
+        "importedCustomerId": null,
+        "existsInCrm": false,
+        "crmMatchInfo": null
+      },
+      {
+        "id": 30003,
+        "contactName": null,
+        "position": null,
+        "department": "总机",
+        "phone": null,
+        "phoneFull": null,
+        "telephone": "0755-8888****,0755-8888****",
+        "telephoneFull": "0755-88881234,0755-88885678",
+        "email": "info***@example.com",
+        "emailFull": "info@example.com",
+        "sourceType": "annual_report",
+        "sourceTypeLabel": "年报公示",
+        "reliability": 3,
+        "reliabilityLabel": "高",
+        "isImported": false,
+        "existsInCrm": false,
+        "crmMatchInfo": null
+      }
+    ],
+    "summary": {
+      "totalContacts": 5,
+      "withPhone": 3,
+      "withEmail": 4,
+      "highReliability": 2,
+      "alreadyInCrm": 1,
+      "alreadyImported": 1
+    },
+    "quota": {
+      "dailyRemaining": 42,
+      "monthlyRemaining": 180
+    }
+  }
+}
+```
+
+**导入联系人到CRM客户请求**：
+```json
+POST /v1/enterprise/91440300MA5XXXXXX/contacts/30002/import
+{
+  "customerId": 5001,
+  "isPrimary": false,
+  "isDecisionMaker": true,
+  "remark": "从五度易链查询导入"
+}
+```
+
+**批量导入联系人请求**：
+```json
+POST /v1/enterprise/91440300MA5XXXXXX/contacts/batch-import
+{
+  "customerId": 5001,
+  "contactIds": [30002, 30003],
+  "remark": "批量导入采购部联系人"
+}
+```
+
+**配额使用情况响应**：
+```json
+GET /v1/enterprise/contact-quota
+{
+  "code": 200,
+  "data": {
+    "daily": {
+      "quota": 50,
+      "used": 8,
+      "remaining": 42,
+      "resetTime": "2026-02-26T00:00:00"
+    },
+    "monthly": {
+      "quota": 500,
+      "used": 320,
+      "remaining": 180,
+      "resetTime": "2026-03-01T00:00:00"
+    },
+    "recentQueries": [
+      {
+        "queryTime": "2026-02-25T14:30:00",
+        "companyName": "示例科技有限公司",
+        "resultCount": 5,
+        "queryUserName": "李明",
+        "isCacheHit": false
+      }
+    ]
+  }
+}
+```
+
+### S2.9 联系方式数据脱敏策略
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                联系方式脱敏与权限策略                       │
+│                                                            │
+│  1. 展示脱敏                                              │
+│     ├── 列表展示时默认脱敏：138****8000                    │
+│     ├── 点击 [查看完整号码] 后显示全量                     │
+│     └── 查看完整号码的操作记入审计日志                     │
+│                                                            │
+│  2. 权限控制                                               │
+│     ├── 查询联系方式：需 enterprise:contact:query 权限     │
+│     ├── 查看完整号码：需 enterprise:contact:view_full 权限 │
+│     ├── 导入为联系人：需 customer:contact:create 权限      │
+│     └── 管理员可配置是否允许导出联系方式                    │
+│                                                            │
+│  3. 接口返回字段策略                                       │
+│     ├── phone / email → 脱敏版（列表展示）                │
+│     ├── phoneFull / emailFull → 完整版                    │
+│     └── 无 view_full 权限时，Full字段返回 null             │
+│                                                            │
+│  4. 防滥用策略                                             │
+│     ├── 单用户每日查询上限（可配置，默认 20 次）           │
+│     ├── 同一企业 30 天内重复查询不消耗配额（命中缓存）     │
+│     ├── 查询日志全量记录，可审计追溯                       │
+│     └── 异常查询频率自动告警                               │
+└──────────────────────────────────────────────────────────┘
+```
+
+### S2.10 平台企业匹配逻辑
 
 ```
 查询五度易链返回结果后：
@@ -320,34 +647,146 @@ GET /v1/enterprise/search?keyword=示例科技
    └── 展示所属销售员信息（数据权限内可见）
 
 4. 可直接将查询到的企业一键导入为线索或客户
+
+联系方式查询后额外匹配：
+5. 将返回的手机号与 customer_contact 表匹配
+6. 标注每个联系人是否已存在于CRM中
+7. 已存在的联系人展示关联的客户名称和联系人ID
 ```
 
-### S2.7 页面设计
+### S2.11 页面设计
 
 ```
-PC 端 - 企业查询页面
-┌───────────────────────────────────────────────────────────┐
-│  企业信息查询                                               │
-│                                                             │
-│  🔍 [________________________] [搜索]                     │
-│     输入企业名称或统一社会信用代码                            │
-│                                                             │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │  深圳示例科技有限公司                                  │  │
-│  │  统一社会信用代码: 91440300MA5XXXXXX                   │  │
-│  │  法人: 张三  |  注册资本: 5000万  |  成立: 2018-05-10  │  │
-│  │  状态: 存续  |  行业: 软件和信息技术服务业              │  │
-│  │  🟢 已是平台客户 → 负责人: 李明 (华南销售部)           │  │
-│  │  [查看客户详情]                                       │  │
-│  ├──────────────────────────────────────────────────────┤  │
-│  │  北京示例科技股份有限公司                               │  │
-│  │  统一社会信用代码: 91110000MA0XXXXXX                   │  │
-│  │  法人: 李四  |  注册资本: 1亿  |  成立: 2015-03-20     │  │
-│  │  状态: 存续  |  行业: 互联网和相关服务                  │  │
-│  │  ⚪ 非平台客户                                        │  │
-│  │  [导入为线索]  [导入为客户]                             │  │
-│  └──────────────────────────────────────────────────────┘  │
-└───────────────────────────────────────────────────────────┘
+PC 端 - 企业查询页面（含联系方式查询）
+┌───────────────────────────────────────────────────────────────────┐
+│  企业信息查询                              配额: 今日 42/50  本月 180/500│
+│                                                                   │
+│  🔍 [________________________] [搜索]                           │
+│     输入企业名称或统一社会信用代码                                  │
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────┐    │
+│  │  深圳示例科技有限公司                                      │    │
+│  │  统一社会信用代码: 91440300MA5XXXXXX                       │    │
+│  │  法人: 张三  |  注册资本: 5000万  |  成立: 2018-05-10      │    │
+│  │  状态: 存续  |  行业: 软件和信息技术服务业                  │    │
+│  │  🟢 已是平台客户 → 负责人: 李明 (华南销售部)               │    │
+│  │  📞 已有 5 个联系方式 (2026-02-20查询)                     │    │
+│  │  [查看客户详情]  [查看联系方式]  [刷新联系方式]             │    │
+│  ├──────────────────────────────────────────────────────────┤    │
+│  │  北京示例科技股份有限公司                                   │    │
+│  │  统一社会信用代码: 91110000MA0XXXXXX                       │    │
+│  │  法人: 李四  |  注册资本: 1亿  |  成立: 2015-03-20         │    │
+│  │  状态: 存续  |  行业: 互联网和相关服务                      │    │
+│  │  ⚪ 非平台客户                                            │    │
+│  │  📞 未查询联系方式                                        │    │
+│  │  [查询联系方式]  [导入为线索]  [导入为客户]                 │    │
+│  └──────────────────────────────────────────────────────────┘    │
+└───────────────────────────────────────────────────────────────────┘
+
+点击 [查看联系方式] / [查询联系方式] 后弹出或展开：
+┌──────────────────────────────────────────────────────────────────┐
+│  📞 深圳示例科技有限公司 - 联系方式                          [关闭] │
+│                                                                    │
+│  来源: 五度易链  |  查询时间: 2026-02-20  |  共 5 个联系人         │
+│  [全部导入到客户]  [刷新数据(-1配额)]                              │
+│                                                                    │
+│  ┌────────┬──────────┬──────────┬──────────┬────────┬──────────┐ │
+│  │ 姓名   │ 职位     │ 手机号    │ 固话     │ 邮箱   │ 操作     │ │
+│  ├────────┼──────────┼──────────┼──────────┼────────┼──────────┤ │
+│  │ 张三   │ 总经理    │138****000│0755-8888 │zhang***│ 🟢已在CRM│ │
+│  │        │          │[查看完整] │[查看完整] │[查看]  │ [查看]   │ │
+│  │ 🟢高   │ 来源:年报 │          │          │        │          │ │
+│  ├────────┼──────────┼──────────┼──────────┼────────┼──────────┤ │
+│  │ 李芳   │ 采购经理  │139****000│   -      │li***@  │ [导入]   │ │
+│  │        │          │[查看完整] │          │[查看]  │ [拨打]   │ │
+│  │ 🟡中   │ 来源:招聘 │          │          │        │ [复制]   │ │
+│  ├────────┼──────────┼──────────┼──────────┼────────┼──────────┤ │
+│  │ -      │ 总机     │   -      │0755-8888 │info*** │ [导入]   │ │
+│  │        │          │          │0755-8888 │[查看]  │ [复制]   │ │
+│  │ 🟢高   │ 来源:年报 │          │[查看完整] │        │          │ │
+│  └────────┴──────────┴──────────┴──────────┴────────┴──────────┘ │
+│                                                                    │
+│  💡 提示：🟢高可靠度(年报/官方)  🟡中可靠度(招聘)  🔴低可靠度(其他) │
+│  ⚠️ 同一企业30天内再次查询不消耗配额                               │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+```
+APP 端 - 企业查询 + 联系方式
+┌──────────────────────────────────────┐
+│ ← 企业查询           配额: 42/50     │
+├──────────────────────────────────────┤
+│                                      │
+│  🔍 [搜索企业名称___________]        │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │ 深圳示例科技有限公司          │    │
+│  │ 法人:张三  资本:5000万        │    │
+│  │ 🟢 已是平台客户              │    │
+│  │ 📞 5个联系方式               │    │
+│  │ [查看详情]  [查看联系方式]     │    │
+│  ├──────────────────────────────┤    │
+│  │ 北京示例科技股份有限公司       │    │
+│  │ 法人:李四  资本:1亿           │    │
+│  │ ⚪ 非平台客户                │    │
+│  │ 📞 未查询                    │    │
+│  │ [查询联系方式]  [导入]        │    │
+│  └──────────────────────────────┘    │
+│                                      │
+│  点击 [查看联系方式] 进入：            │
+│  ┌──────────────────────────────┐    │
+│  │ ← 联系方式                    │    │
+│  │ 深圳示例科技有限公司           │    │
+│  │ 查询于 2026-02-20  共5人      │    │
+│  │                              │    │
+│  │ 👤 张三 · 总经理  🟢高       │    │
+│  │ 📱 138****8000  [查看] [拨打] │    │
+│  │ 📧 zhang***@... [查看]       │    │
+│  │ 来源: 年报  🟢已在CRM         │    │
+│  │                              │    │
+│  │ 👤 李芳 · 采购经理  🟡中     │    │
+│  │ 📱 139****9000  [查看] [拨打] │    │
+│  │ 📧 li***@...    [查看]       │    │
+│  │ 来源: 招聘                    │    │
+│  │ [导入为联系人]                │    │
+│  │                              │    │
+│  │ 📞 总机  🟢高                │    │
+│  │ ☎️ 0755-8888**** [查看]      │    │
+│  │ 📧 info***@...  [查看]       │    │
+│  │ 来源: 年报                    │    │
+│  │ [导入为联系人]                │    │
+│  │                              │    │
+│  │     [全部导入]  [刷新数据]    │    │
+│  └──────────────────────────────┘    │
+│                                      │
+└──────────────────────────────────────┘
+```
+
+### S2.12 客户详情中的联系方式查询入口
+
+在客户 360° 视图中，如果客户已关联了统一社会信用代码（`credit_code`），则在联系人列表区域提供 [从五度易链获取更多联系人] 的入口：
+
+```
+客户详情 - 联系人Tab
+┌───────────────────────────────────────────────────┐
+│  联系人 (3)                    [新增联系人]         │
+│                                                     │
+│  👤 张三 · 总经理（主联系人/决策人）                  │
+│     📱 13800138000  📧 zhangsan@example.com        │
+│                                                     │
+│  👤 王经理 · 采购部                                 │
+│     📱 13900139000                                  │
+│                                                     │
+│  👤 总机                                            │
+│     ☎️ 0755-88881234                                │
+│                                                     │
+│  ─────────────────────────────────────────────     │
+│  📞 从五度易链获取更多联系人                          │
+│  信用代码: 91440300MA5XXXXXX                        │
+│  上次查询: 2026-02-20 (5个结果, 已导入1个)           │
+│  [查看已查询联系方式]  [刷新查询]                     │
+│                                                     │
+└───────────────────────────────────────────────────┘
 ```
 
 ---
@@ -1271,6 +1710,10 @@ friend (N) ──── (1) user (销售员)
 customer (1) ──── (N) customer_blacklist
 tenant (1) ──── (1) tenant_wechat_work_config
 tenant (1) ──── (N) third_party_config
+
+enterprise_query_cache (1) ── (N) enterprise_contact (按credit_code关联)
+enterprise_contact (0..1) ── (1) customer_contact (导入后关联)
+enterprise_contact_query_log (N) ── (1) user (查询人)
 
 user (1) ──── (N) location_report
 ```

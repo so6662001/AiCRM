@@ -851,7 +851,14 @@ POST   /v1/location-reports                        -- APP上报位置
 GET    /v1/enterprise/search                       -- 搜索企业（标注是否平台客户）
 GET    /v1/enterprise/{creditCode}                 -- 企业详情
 GET    /v1/enterprise/{creditCode}/risk            -- 企业风险信息
+GET    /v1/enterprise/{creditCode}/contacts        -- 查询企业联系方式（首次调用API，后续走缓存）
+GET    /v1/enterprise/{creditCode}/contacts/cache  -- 仅查看本地缓存的联系方式
+POST   /v1/enterprise/{creditCode}/contacts/refresh -- 强制刷新联系方式（消耗配额）
+POST   /v1/enterprise/{creditCode}/contacts/{id}/import    -- 导入联系人到CRM客户
+POST   /v1/enterprise/{creditCode}/contacts/batch-import   -- 批量导入联系人
 POST   /v1/enterprise/{creditCode}/import          -- 导入为客户/线索
+GET    /v1/enterprise/contact-query-logs           -- 联系方式查询日志
+GET    /v1/enterprise/contact-quota                -- 查看配额使用情况
 ```
 
 ---
