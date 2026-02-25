@@ -6,6 +6,7 @@ import com.aicrm.common.page.PageResult;
 import com.aicrm.common.tenant.TenantContext;
 import com.aicrm.module.crm.customer.entity.Customer;
 import com.aicrm.module.crm.customer.mapper.CustomerMapper;
+import com.aicrm.module.crm.lead.assignlog.service.LeadAssignLogService;
 import com.aicrm.module.crm.lead.dto.*;
 import com.aicrm.module.crm.lead.entity.Lead;
 import com.aicrm.module.crm.lead.mapper.LeadMapper;
@@ -34,8 +35,12 @@ public class LeadServiceImpl implements LeadService {
     private static final int STATUS_CONVERTED = 3;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
+    private static final int ASSIGN_TYPE_MANUAL = 1;
+    private static final int ASSIGN_TYPE_RETURN = 4;
+
     private final LeadMapper leadMapper;
     private final CustomerMapper customerMapper;
+    private final LeadAssignLogService leadAssignLogService;
 
     @Override
     public PageResult<LeadVO> page(LeadQueryDTO query) {
@@ -177,12 +182,14 @@ public class LeadServiceImpl implements LeadService {
                     .eq(Lead::getTenantId, tenantId));
 
             if (lead != null) {
+                Long fromUserId = lead.getOwnerUserId();
                 lead.setOwnerUserId(targetUserId);
                 lead.setStatus(1);
                 lead.setAssignUserId(TenantContext.getUserId());
                 lead.setAssignTime(now);
                 lead.setInPool(0);
                 leadMapper.updateById(lead);
+                leadAssignLogService.log(leadId, ASSIGN_TYPE_MANUAL, fromUserId, targetUserId, null);
             }
         }
     }
@@ -207,9 +214,11 @@ public class LeadServiceImpl implements LeadService {
         lead.setStatus(4);
         lead.setPoolEnterTime(LocalDateTime.now());
         lead.setReturnReason(reason);
+        Long fromUserId = lead.getOwnerUserId();
         lead.setOwnerUserId(null);
         lead.setOwnerOrgId(null);
         leadMapper.updateById(lead);
+        leadAssignLogService.log(id, ASSIGN_TYPE_RETURN, fromUserId, null, reason);
     }
 
     @Override

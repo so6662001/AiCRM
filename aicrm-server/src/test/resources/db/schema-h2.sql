@@ -604,3 +604,47 @@ CREATE TABLE IF NOT EXISTS `customer_approval` (
   `deleted`           TINYINT      NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 );
+
+CREATE TABLE IF NOT EXISTS `lead_assign_log` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `lead_id`           BIGINT       NOT NULL,
+  `assign_type`       TINYINT      NOT NULL,
+  `from_user_id`      BIGINT       DEFAULT NULL,
+  `to_user_id`        BIGINT       DEFAULT NULL,
+  `assign_by`         BIGINT       DEFAULT NULL,
+  `remark`            VARCHAR(512) DEFAULT NULL,
+  `created_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `lead_pool_config` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `pool_name`         VARCHAR(128) NOT NULL,
+  `recycle_days`      INT          NOT NULL DEFAULT 7,
+  `max_hold_count`    INT          NOT NULL DEFAULT 50,
+  `daily_pick_limit`  INT          NOT NULL DEFAULT 5,
+  `visible_org_ids`   VARCHAR(512) DEFAULT NULL,
+  `status`            TINYINT      NOT NULL DEFAULT 1,
+  `created_by`        BIGINT       DEFAULT NULL,
+  `created_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by`        BIGINT       DEFAULT NULL,
+  `updated_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `deleted`           TINYINT      NOT NULL DEFAULT 0,
+  `version`           INT          NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `opportunity_stage_log` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `opportunity_id`    BIGINT       NOT NULL,
+  `from_stage_id`     BIGINT       DEFAULT NULL,
+  `to_stage_id`       BIGINT       DEFAULT NULL,
+  `stay_days`         INT          DEFAULT NULL,
+  `remark`            VARCHAR(512) DEFAULT NULL,
+  `operated_by`       BIGINT       DEFAULT NULL,
+  `created_time`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+);

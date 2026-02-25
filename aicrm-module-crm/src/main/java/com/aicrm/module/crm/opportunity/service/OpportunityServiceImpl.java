@@ -13,6 +13,7 @@ import com.aicrm.module.crm.opportunity.entity.Opportunity;
 import com.aicrm.module.crm.opportunity.entity.OpportunityStageConfig;
 import com.aicrm.module.crm.opportunity.mapper.OpportunityMapper;
 import com.aicrm.module.crm.opportunity.mapper.OpportunityStageConfigMapper;
+import com.aicrm.module.crm.opportunity.stagelog.service.OpportunityStageLogService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -40,6 +41,7 @@ public class OpportunityServiceImpl implements OpportunityService {
     private final OpportunityMapper opportunityMapper;
     private final CustomerMapper customerMapper;
     private final OpportunityStageConfigMapper stageConfigMapper;
+    private final OpportunityStageLogService opportunityStageLogService;
 
     @Override
     public PageResult<OpportunityVO> page(OpportunityQueryDTO query) {
@@ -175,6 +177,7 @@ public class OpportunityServiceImpl implements OpportunityService {
             wrapper.set(Opportunity::getRemark, dto.getRemark());
         }
         opportunityMapper.update(null, wrapper);
+        opportunityStageLogService.log(id, existing.getStageId(), dto.getStageId(), 0, dto.getRemark());
     }
 
     @Override
@@ -194,6 +197,7 @@ public class OpportunityServiceImpl implements OpportunityService {
             throw new IllegalArgumentException("商机不存在");
         }
 
+        Long winStageId = findStageByFlag(tenantId, true);
         LambdaUpdateWrapper<Opportunity> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(Opportunity::getId, id)
                 .eq(Opportunity::getTenantId, tenantId)
@@ -203,6 +207,7 @@ public class OpportunityServiceImpl implements OpportunityService {
                 .set(Opportunity::getUpdatedBy, TenantContext.getUserId())
                 .set(Opportunity::getUpdatedTime, LocalDateTime.now());
         opportunityMapper.update(null, wrapper);
+        opportunityStageLogService.log(id, existing.getStageId(), winStageId, 0, "赢单");
     }
 
     @Override
@@ -222,6 +227,7 @@ public class OpportunityServiceImpl implements OpportunityService {
             throw new IllegalArgumentException("商机不存在");
         }
 
+        Long lostStageId = findStageByFlag(tenantId, false);
         LambdaUpdateWrapper<Opportunity> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(Opportunity::getId, id)
                 .eq(Opportunity::getTenantId, tenantId)
@@ -230,6 +236,7 @@ public class OpportunityServiceImpl implements OpportunityService {
                 .set(Opportunity::getUpdatedBy, TenantContext.getUserId())
                 .set(Opportunity::getUpdatedTime, LocalDateTime.now());
         opportunityMapper.update(null, wrapper);
+        opportunityStageLogService.log(id, existing.getStageId(), lostStageId, 0, lossReason);
     }
 
     private OpportunityVO convertToVO(Opportunity opportunity) {
@@ -263,6 +270,15 @@ public class OpportunityServiceImpl implements OpportunityService {
         }
         // TODO: 集成用户服务获取用户名，暂时返回空
         return null;
+    }
+
+    private Long findStageByFlag(Long tenantId, boolean isWon) {
+        LambdaQueryWrapper<OpportunityStageConfig> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(OpportunityStageConfig::getTenantId, tenantId)
+                .eq(isWon ? OpportunityStageConfig::getIsWon : OpportunityStageConfig::getIsLost, 1)
+                .last("LIMIT 1");
+        OpportunityStageConfig config = stageConfigMapper.selectOne(wrapper);
+        return config != null ? config.getId() : null;
     }
 
     private String generateOpportunityNo(Long tenantId) {

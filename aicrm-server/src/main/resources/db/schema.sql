@@ -677,3 +677,53 @@ CREATE TABLE IF NOT EXISTS `customer_approval` (
   PRIMARY KEY (`id`),
   KEY `idx_tenant_status` (`tenant_id`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='客户审核表';
+
+-- 线索分配日志表
+CREATE TABLE IF NOT EXISTS `lead_assign_log` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `lead_id`           BIGINT       NOT NULL,
+  `assign_type`       TINYINT      NOT NULL COMMENT '1手动 2自动 3经理再分配 4退回 5领取',
+  `from_user_id`      BIGINT       DEFAULT NULL,
+  `to_user_id`        BIGINT       DEFAULT NULL,
+  `assign_by`         BIGINT       DEFAULT NULL,
+  `remark`            VARCHAR(512) DEFAULT NULL,
+  `created_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_tenant_lead` (`tenant_id`, `lead_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='线索分配日志表';
+
+-- 公海池配置表
+CREATE TABLE IF NOT EXISTS `lead_pool_config` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `pool_name`         VARCHAR(128) NOT NULL,
+  `recycle_days`      INT          NOT NULL DEFAULT 7,
+  `max_hold_count`    INT          NOT NULL DEFAULT 50,
+  `daily_pick_limit`  INT          NOT NULL DEFAULT 5,
+  `visible_org_ids`   VARCHAR(512) DEFAULT NULL,
+  `status`            TINYINT      NOT NULL DEFAULT 1,
+  `created_by`        BIGINT       DEFAULT NULL,
+  `created_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by`        BIGINT       DEFAULT NULL,
+  `updated_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted`           TINYINT(1)   NOT NULL DEFAULT 0,
+  `version`           INT          NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `idx_tenant_id` (`tenant_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公海池配置表';
+
+-- 商机阶段变更日志表
+CREATE TABLE IF NOT EXISTS `opportunity_stage_log` (
+  `id`                BIGINT       NOT NULL,
+  `tenant_id`         BIGINT       NOT NULL,
+  `opportunity_id`    BIGINT       NOT NULL,
+  `from_stage_id`     BIGINT       DEFAULT NULL,
+  `to_stage_id`       BIGINT       DEFAULT NULL,
+  `stay_days`         INT          DEFAULT NULL,
+  `remark`            VARCHAR(512) DEFAULT NULL,
+  `operated_by`       BIGINT       DEFAULT NULL,
+  `created_time`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_tenant_opportunity` (`tenant_id`, `opportunity_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商机阶段变更日志表';
