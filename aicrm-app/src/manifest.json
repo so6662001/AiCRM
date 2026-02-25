@@ -1,0 +1,21 @@
+{
+  "name": "AiCRM",
+  "appid": "__UNI__AICRM001",
+  "description": "AiCRM 智能客户关系管理",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "h5": {
+    "title": "AiCRM",
+    "router": { "mode": "hash" }
+  },
+  "app-plus": {
+    "distribute": {
+      "icons": {}
+    },
+    "modules": {
+      "Maps": {},
+      "Camera": {}
+    }
+  }
+}
